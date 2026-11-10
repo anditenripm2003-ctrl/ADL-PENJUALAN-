@@ -1,0 +1,72 @@
+{
+  "created_at_utc": "2026-11-10T08:20:11+00:00",
+  "n_products": 811,
+  "n_weeks": 52,
+  "total_sales": 375287.0,
+  "data_digest": "1b3740cfe21d9ac8",
+  "distance": {
+    "name": "FastDTW",
+    "radius": 2,
+    "notes": {
+      "original": "FastDTW numba",
+      "minmax": "FastDTW numba",
+      "zscore": "FastDTW numba"
+    }
+  },
+  "config": {
+    "REPRESENTATIONS": [
+      "original",
+      "minmax",
+      "zscore"
+    ],
+    "K_GRID": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "LINKAGES": [
+      "average",
+      "complete"
+    ],
+    "DBSCAN_MIN_SAMPLES": 7,
+    "DBSCAN_EPS_PERCENTILES": [
+      30,
+      50,
+      70,
+      85,
+      95
+    ],
+    "FUZZINESS": 2.0,
+    "RANDOM_STATE": 42,
+    "MIN_BALANCE": 0.5,
+    "MAX_NOISE_SHARE": 0.3,
+    "MIN_CLUSTERS": 2
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.4.6",
+    "pandas": "2.2.3"
+  },
+  "runtime_s": 262.7,
+  "stability": {
+    "original": {
+      "ARI": 0.9931,
+      "status": "ARI 0.993 (stabil)"
+    },
+    "minmax": {
+      "ARI": null,
+      "status": "deterministik (tidak bergantung seed)"
+    },
+    "zscore": {
+      "ARI": 0.7176,
+      "status": "ARI 0.718 (kurang stabil, < 0,75)"
+    }
+  },
+  "best": {
+    "original": "original|kmeans|3|",
+    "minmax": "minmax|kmedoids|2|",
+    "zscore": "zscore|kmeans|3|"
+  }
+}

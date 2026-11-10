@@ -1,0 +1,106 @@
+Representasi,Algoritma,K,Parameter,Silhouette,DBI_MDS,CHI_MDS,Balance,Cluster,Noise,Eta2_nol,Waktu_s,Terbaik,Kunci
+Data asli,K-Means (DBA untuk DTW),2.0,,0.77589,0.421585,2946.279746,0.723897,2,0,0.147676,0.820408,False,original|kmeans|2|
+Data asli,K-Means (DBA untuk DTW),3.0,,0.685654,0.494599,4705.965827,0.853379,3,0,0.388251,1.732437,True,original|kmeans|3|
+Data asli,K-Means (DBA untuk DTW),4.0,,0.541875,0.541037,3990.524401,0.964519,4,0,0.866744,3.823949,False,original|kmeans|4|
+Data asli,K-Means (DBA untuk DTW),5.0,,0.441339,1.609966,3064.443921,0.897156,5,0,0.866744,5.200719,False,original|kmeans|5|
+Data asli,K-Means (DBA untuk DTW),6.0,,0.443158,1.579395,3509.333051,0.890574,6,0,0.876918,9.444498,False,original|kmeans|6|
+Data asli,K-Medoids PAM,2.0,,0.77589,0.421585,2946.279746,0.723897,2,0,0.147676,0.027729,False,original|kmedoids|2|
+Data asli,K-Medoids PAM,3.0,,0.673688,0.507187,4413.914302,0.872057,3,0,0.425093,0.029771,False,original|kmedoids|3|
+Data asli,K-Medoids PAM,4.0,,0.544755,0.536605,3904.0905,0.967284,4,0,0.879386,0.040446,False,original|kmedoids|4|
+Data asli,K-Medoids PAM,5.0,,0.52559,0.59929,4286.533841,0.911332,5,0,0.879409,0.05011,False,original|kmedoids|5|
+Data asli,K-Medoids PAM,6.0,,0.486904,0.90435,3708.683196,0.884489,6,0,0.879414,0.058094,False,original|kmedoids|6|
+Data asli,Fuzzy C-Means,2.0,,0.77589,0.421585,2946.279746,0.723897,2,0,0.147676,4.65044,False,original|fcm|2|
+Data asli,Fuzzy C-Means,3.0,,0.684869,0.494407,4690.901781,0.855911,3,0,0.392264,4.939004,False,original|fcm|3|
+Data asli,Fuzzy C-Means,4.0,,0.521428,0.742424,3629.722623,0.912237,4,0,0.659006,7.191896,False,original|fcm|4|
+Data asli,Fuzzy C-Means,5.0,,0.414045,4.030114,2767.105243,0.876473,5,0,0.731348,8.598209,False,original|fcm|5|
+Data asli,Fuzzy C-Means,6.0,,0.416057,4.000685,3207.440491,0.89132,6,0,0.8124,12.510162,False,original|fcm|6|
+Data asli,Fuzzy C-Medoids,2.0,,0.777339,0.409558,2932.660399,0.711449,2,0,0.14205,0.007039,False,original|fcmdd|2|
+Data asli,Fuzzy C-Medoids,3.0,,0.674312,0.506307,4429.388896,0.87117,3,0,0.422944,0.005906,False,original|fcmdd|3|
+Data asli,Fuzzy C-Medoids,4.0,,0.520396,0.696179,3642.951363,0.939149,4,0,0.740064,0.005456,False,original|fcmdd|4|
+Data asli,Fuzzy C-Medoids,5.0,,0.41513,2.73999,2845.006476,0.878399,5,0,0.740222,0.006612,False,original|fcmdd|5|
+Data asli,Fuzzy C-Medoids,6.0,,0.330333,2.625413,2329.705629,0.901206,6,0,0.828211,0.006956,False,original|fcmdd|6|
+Data asli,Hierarchical (Agglomerative),2.0,average,0.770652,0.322169,2447.126636,0.604725,2,0,0.101953,0.027665,False,original|agglomerative|2|average
+Data asli,Hierarchical (Agglomerative),3.0,average,0.728667,0.316959,1231.88917,0.38803,3,0,0.101953,0.028661,False,original|agglomerative|3|average
+Data asli,Hierarchical (Agglomerative),4.0,average,0.655528,0.452078,3081.29829,0.678082,4,0,0.384433,0.016205,False,original|agglomerative|4|average
+Data asli,Hierarchical (Agglomerative),5.0,average,0.612997,0.547338,2340.7677,0.591848,5,0,0.384433,0.016485,False,original|agglomerative|5|average
+Data asli,Hierarchical (Agglomerative),6.0,average,0.570051,0.592347,2649.810929,0.605181,6,0,0.384433,0.015749,False,original|agglomerative|6|average
+Data asli,Hierarchical (Agglomerative),2.0,complete,0.777418,0.326663,2642.489791,0.620082,2,0,0.106975,0.016878,False,original|agglomerative|2|complete
+Data asli,Hierarchical (Agglomerative),3.0,complete,0.685365,0.493421,4705.782876,0.851862,3,0,0.384433,0.015493,False,original|agglomerative|3|complete
+Data asli,Hierarchical (Agglomerative),4.0,complete,0.656135,0.449777,3201.471603,0.680265,4,0,0.384433,0.017021,False,original|agglomerative|4|complete
+Data asli,Hierarchical (Agglomerative),5.0,complete,0.60903,0.77101,2519.872231,0.606572,5,0,0.384433,0.016927,False,original|agglomerative|5|complete
+Data asli,Hierarchical (Agglomerative),6.0,complete,0.564745,0.805326,2675.939646,0.616679,6,0,0.384433,0.016013,False,original|agglomerative|6|complete
+Data asli,DBSCAN,,30,,,,0.0,1,554,0.0,0.019334,False,original|dbscan|0|30
+Data asli,DBSCAN,,50,,,,0.0,1,365,0.0,0.019012,False,original|dbscan|0|50
+Data asli,DBSCAN,,70,,,,0.0,1,215,0.0,0.020837,False,original|dbscan|0|70
+Data asli,DBSCAN,,85,0.762615,0.297021,552.538402,0.225846,2,98,0.027491,0.023203,False,original|dbscan|0|85
+Data asli,DBSCAN,,95,0.774459,0.313019,2314.007963,0.575242,2,13,0.0953,0.028534,False,original|dbscan|0|95
+Min-Max per produk,K-Means (DBA untuk DTW),2.0,,0.333246,0.939507,761.604688,0.898217,2,0,0.840344,4.935795,False,minmax|kmeans|2|
+Min-Max per produk,K-Means (DBA untuk DTW),3.0,,0.147771,1.278343,549.77152,0.995473,3,0,0.907483,6.048545,False,minmax|kmeans|3|
+Min-Max per produk,K-Means (DBA untuk DTW),4.0,,0.114048,1.52867,473.672786,0.964689,4,0,0.923062,8.209707,False,minmax|kmeans|4|
+Min-Max per produk,K-Means (DBA untuk DTW),5.0,,0.090408,1.673866,378.299746,0.987968,5,0,0.929193,7.759267,False,minmax|kmeans|5|
+Min-Max per produk,K-Means (DBA untuk DTW),6.0,,0.075989,2.039091,308.967575,0.989778,6,0,0.929251,9.992856,False,minmax|kmeans|6|
+Min-Max per produk,K-Medoids PAM,2.0,,0.333378,0.923406,826.599961,0.939612,2,0,0.867386,0.02243,True,minmax|kmedoids|2|
+Min-Max per produk,K-Medoids PAM,3.0,,0.147095,1.289131,539.742462,0.996963,3,0,0.88716,0.021116,False,minmax|kmedoids|3|
+Min-Max per produk,K-Medoids PAM,4.0,,0.105711,1.434023,442.986819,0.90664,4,0,0.904373,0.024555,False,minmax|kmedoids|4|
+Min-Max per produk,K-Medoids PAM,5.0,,0.068519,1.605669,365.168999,0.945153,5,0,0.91886,0.026589,False,minmax|kmedoids|5|
+Min-Max per produk,K-Medoids PAM,6.0,,0.076227,1.529263,329.053816,0.907186,6,0,0.923074,0.034743,False,minmax|kmedoids|6|
+Min-Max per produk,Fuzzy C-Means,2.0,,0.304177,1.016593,657.43884,0.91286,2,0,0.711348,3.288078,False,minmax|fcm|2|
+Min-Max per produk,Fuzzy C-Means,3.0,,0.112279,1.853633,474.475111,0.992057,3,0,0.87207,6.012261,False,minmax|fcm|3|
+Min-Max per produk,Fuzzy C-Means,4.0,,0.075097,2.081789,399.192292,0.980457,4,0,0.868,6.315061,False,minmax|fcm|4|
+Min-Max per produk,Fuzzy C-Means,5.0,,0.06178,2.097904,333.395887,0.97349,5,0,0.911878,9.205322,False,minmax|fcm|5|
+Min-Max per produk,Fuzzy C-Means,6.0,,0.052712,3.06291,277.588077,0.96906,6,0,0.910738,10.87272,False,minmax|fcm|6|
+Min-Max per produk,Fuzzy C-Medoids,2.0,,0.212844,1.166531,459.658603,0.999314,2,0,0.416218,0.005003,False,minmax|fcmdd|2|
+Min-Max per produk,Fuzzy C-Medoids,3.0,,0.149908,1.361,537.357587,0.98793,3,0,0.845384,0.007243,False,minmax|fcmdd|3|
+Min-Max per produk,Fuzzy C-Medoids,4.0,,0.104681,1.594694,417.161135,0.953564,4,0,0.887183,0.010959,False,minmax|fcmdd|4|
+Min-Max per produk,Fuzzy C-Medoids,5.0,,0.087184,1.898198,331.951479,0.946197,5,0,0.908348,0.006733,False,minmax|fcmdd|5|
+Min-Max per produk,Fuzzy C-Medoids,6.0,,0.076224,2.701673,268.741379,0.935266,6,0,0.909193,0.006989,False,minmax|fcmdd|6|
+Min-Max per produk,Hierarchical (Agglomerative),2.0,average,0.248399,1.27262,17.127686,0.103584,2,0,0.019,0.031147,False,minmax|agglomerative|2|average
+Min-Max per produk,Hierarchical (Agglomerative),3.0,average,0.300347,1.272935,414.591161,0.665314,3,0,0.783792,0.027209,False,minmax|agglomerative|3|average
+Min-Max per produk,Hierarchical (Agglomerative),4.0,average,0.272185,1.266234,277.276108,0.531888,4,0,0.784411,0.01853,False,minmax|agglomerative|4|average
+Min-Max per produk,Hierarchical (Agglomerative),5.0,average,0.262048,1.28582,209.106658,0.46288,5,0,0.784411,0.016043,False,minmax|agglomerative|5|average
+Min-Max per produk,Hierarchical (Agglomerative),6.0,average,0.246707,1.246726,182.104334,0.457144,6,0,0.788925,0.015572,False,minmax|agglomerative|6|average
+Min-Max per produk,Hierarchical (Agglomerative),2.0,complete,0.321002,0.941729,798.475701,0.961301,2,0,0.808402,0.017825,False,minmax|agglomerative|2|complete
+Min-Max per produk,Hierarchical (Agglomerative),3.0,complete,0.237155,1.446791,532.732471,0.833096,3,0,0.866765,0.016168,False,minmax|agglomerative|3|complete
+Min-Max per produk,Hierarchical (Agglomerative),4.0,complete,0.199187,1.791655,387.348623,0.784996,4,0,0.910081,0.01605,False,minmax|agglomerative|4|complete
+Min-Max per produk,Hierarchical (Agglomerative),5.0,complete,0.172646,1.574544,319.442794,0.70658,5,0,0.927073,0.015539,False,minmax|agglomerative|5|complete
+Min-Max per produk,Hierarchical (Agglomerative),6.0,complete,0.162923,1.915358,264.406915,0.675892,6,0,0.927082,0.015494,False,minmax|agglomerative|6|complete
+Min-Max per produk,DBSCAN,,30,0.208167,0.81228,25.011712,0.16372,2,354,0.040463,0.018576,False,minmax|dbscan|0|30
+Min-Max per produk,DBSCAN,,50,,,,0.0,1,198,0.0,0.020308,False,minmax|dbscan|0|50
+Min-Max per produk,DBSCAN,,70,,,,0.0,1,109,0.0,0.021185,False,minmax|dbscan|0|70
+Min-Max per produk,DBSCAN,,85,,,,0.0,1,47,0.0,0.021532,False,minmax|dbscan|0|85
+Min-Max per produk,DBSCAN,,95,,,,0.0,1,15,0.0,0.024677,False,minmax|dbscan|0|95
+Scale (z-score per produk),K-Means (DBA untuk DTW),2.0,,0.097573,1.70245,227.446402,0.995643,2,0,0.161739,5.806413,False,zscore|kmeans|2|
+Scale (z-score per produk),K-Means (DBA untuk DTW),3.0,,0.116356,1.263121,315.159886,0.904845,3,0,0.579318,4.8556,True,zscore|kmeans|3|
+Scale (z-score per produk),K-Means (DBA untuk DTW),4.0,,0.095423,1.495569,272.945773,0.930689,4,0,0.62481,7.841891,False,zscore|kmeans|4|
+Scale (z-score per produk),K-Means (DBA untuk DTW),5.0,,0.056234,1.959256,219.630808,0.968783,5,0,0.621654,8.066245,False,zscore|kmeans|5|
+Scale (z-score per produk),K-Means (DBA untuk DTW),6.0,,0.057553,1.744852,215.146663,0.98372,6,0,0.730188,9.986041,False,zscore|kmeans|6|
+Scale (z-score per produk),K-Medoids PAM,2.0,,0.109789,1.675648,254.609013,0.981671,2,0,0.609292,0.026977,False,zscore|kmedoids|2|
+Scale (z-score per produk),K-Medoids PAM,3.0,,0.082885,1.704992,241.238337,0.984991,3,0,0.705753,0.022323,False,zscore|kmedoids|3|
+Scale (z-score per produk),K-Medoids PAM,4.0,,0.086001,1.576167,231.538902,0.885708,4,0,0.75546,0.035449,False,zscore|kmedoids|4|
+Scale (z-score per produk),K-Medoids PAM,5.0,,0.077321,2.025504,189.764326,0.890963,5,0,0.693268,0.046,False,zscore|kmedoids|5|
+Scale (z-score per produk),K-Medoids PAM,6.0,,0.073995,1.772623,186.805115,0.899867,6,0,0.713536,0.044283,False,zscore|kmedoids|6|
+Scale (z-score per produk),Fuzzy C-Means,2.0,,0.051324,2.533588,108.474338,0.999604,2,0,0.001861,3.192699,False,zscore|fcm|2|
+Scale (z-score per produk),Fuzzy C-Means,3.0,,0.02065,4.517929,79.777696,0.989669,3,0,0.130882,5.773136,False,zscore|fcm|3|
+Scale (z-score per produk),Fuzzy C-Means,4.0,,0.013786,4.317275,65.865615,0.978026,4,0,0.170976,6.51679,False,zscore|fcm|4|
+Scale (z-score per produk),Fuzzy C-Means,5.0,,-0.004173,4.73004,69.468508,0.98586,5,0,0.242462,9.010629,False,zscore|fcm|5|
+Scale (z-score per produk),Fuzzy C-Means,6.0,,-0.002888,5.523916,71.03507,0.98727,6,0,0.326646,9.998052,False,zscore|fcm|6|
+Scale (z-score per produk),Fuzzy C-Medoids,2.0,,0.07878,1.921244,179.177362,0.994772,2,0,0.068259,0.009365,False,zscore|fcmdd|2|
+Scale (z-score per produk),Fuzzy C-Medoids,3.0,,0.079785,1.747848,218.129699,0.988128,3,0,0.652036,0.010972,False,zscore|fcmdd|3|
+Scale (z-score per produk),Fuzzy C-Medoids,4.0,,0.055454,3.564006,148.60082,0.952071,4,0,0.667524,0.009024,False,zscore|fcmdd|4|
+Scale (z-score per produk),Fuzzy C-Medoids,5.0,,0.016327,3.316686,125.751127,0.987295,5,0,0.646774,0.014823,False,zscore|fcmdd|5|
+Scale (z-score per produk),Fuzzy C-Medoids,6.0,,0.007606,5.133811,111.091605,0.973754,6,0,0.683451,0.019188,False,zscore|fcmdd|6|
+Scale (z-score per produk),Hierarchical (Agglomerative),2.0,average,0.231313,0.800728,24.106673,0.063003,2,0,0.023491,0.060948,False,zscore|agglomerative|2|average
+Scale (z-score per produk),Hierarchical (Agglomerative),3.0,average,0.182941,0.933897,84.442817,0.243889,3,0,0.237759,0.027523,False,zscore|agglomerative|3|average
+Scale (z-score per produk),Hierarchical (Agglomerative),4.0,average,0.17299,1.170077,57.484591,0.200673,4,0,0.237759,0.028243,False,zscore|agglomerative|4|average
+Scale (z-score per produk),Hierarchical (Agglomerative),5.0,average,0.153056,1.587568,43.661465,0.179153,5,0,0.23777,0.033317,False,zscore|agglomerative|5|average
+Scale (z-score per produk),Hierarchical (Agglomerative),6.0,average,0.147936,1.470792,36.366236,0.170147,6,0,0.237775,0.030032,False,zscore|agglomerative|6|average
+Scale (z-score per produk),Hierarchical (Agglomerative),2.0,complete,0.084741,1.83203,176.648707,0.883838,2,0,0.235084,0.025236,False,zscore|agglomerative|2|complete
+Scale (z-score per produk),Hierarchical (Agglomerative),3.0,complete,0.05465,1.810718,124.860959,0.734428,3,0,0.245517,0.025309,False,zscore|agglomerative|3|complete
+Scale (z-score per produk),Hierarchical (Agglomerative),4.0,complete,0.061354,1.594701,117.202994,0.661876,4,0,0.371438,0.024364,False,zscore|agglomerative|4|complete
+Scale (z-score per produk),Hierarchical (Agglomerative),5.0,complete,0.053627,1.612602,89.009752,0.576708,5,0,0.371438,0.025015,False,zscore|agglomerative|5|complete
+Scale (z-score per produk),Hierarchical (Agglomerative),6.0,complete,0.042548,1.904338,81.015552,0.556832,6,0,0.390321,0.025122,False,zscore|agglomerative|6|complete
+Scale (z-score per produk),DBSCAN,,30,0.16851,1.000536,187.977869,0.772519,2,357,0.350314,0.027213,False,zscore|dbscan|0|30
+Scale (z-score per produk),DBSCAN,,50,,,,0.0,1,169,0.0,0.028301,False,zscore|dbscan|0|50
+Scale (z-score per produk),DBSCAN,,70,,,,0.0,1,42,0.0,0.031322,False,zscore|dbscan|0|70
+Scale (z-score per produk),DBSCAN,,85,,,,0.0,1,11,0.0,0.035443,False,zscore|dbscan|0|85
+Scale (z-score per produk),DBSCAN,,95,,,,0.0,1,2,0.0,0.038041,False,zscore|dbscan|0|95
