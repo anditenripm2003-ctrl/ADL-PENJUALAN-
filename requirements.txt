@@ -1,0 +1,8 @@
+streamlit>=1.55,<2.0
+plotly>=6.0,<8.0
+numpy>=2.0,<3.0
+pandas>=2.2,<3.0
+scipy>=1.14,<2.0
+scikit-learn>=1.8,<2.0
+numba>=0.60,<1.0
+joblib>=1.4,<2.0
