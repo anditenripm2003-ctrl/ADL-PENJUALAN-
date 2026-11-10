@@ -163,8 +163,7 @@ def kpis(cards: list[tuple]) -> None:
 
 def section(title: str, sub: str = "", ic: str = "pulse") -> None:
     """Judul section konsisten: ikon cyan + judul + keterangan singkat."""
-    st.markdown(f'<div class="section-title">{icon(ic)}<span>{title}</span></div>' + (f'<div class="section-sub">{sub}</div>' if sub else ""),
-                unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{icon(ic)}<span>{title}</span></div>', unsafe_allow_html=True)
 
 
 def best_cards(b: dict, keys: dict) -> None:
@@ -261,9 +260,7 @@ def drop_story(totals: np.ndarray) -> dict:
 
 
 def heading(number: str, title: str, subtitle: str) -> None:
-    st.markdown(f'<div class="eyebrow">{number} · Ruang Sales</div>', unsafe_allow_html=True)
-    st.title(title)
-    st.markdown(f'<p class="page-sub">{subtitle}</p>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-head"><span>{number}</span><h1>{title}</h1></div>', unsafe_allow_html=True)
 
 
 def insight(title: str, color: str, body: str) -> str:
@@ -467,7 +464,7 @@ def page_exploration() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("02", "Kenali data sebelum mengelompokkan.", "Detail per produk pada tiga representasi, hubungan aktivitas–volume, dan peta panas seluruh produk.")
+    heading("02", "Eksplorasi Data", "Detail per produk pada tiga representasi, hubungan aktivitas–volume, dan peta panas seluruh produk.")
     key = active_key(b)
     labels = np.asarray(b["res"]["runs"][key]["labels"])
     codes = b["codes"].tolist()
@@ -529,7 +526,7 @@ def page_distance() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("03", "Seberapa mirip dua produk?", "Euclidean vs DTW vs FastDTW pada representasi pilihan, lengkap dengan jalur penyejajaran minggu.")
+    heading("03", "Eksplorasi Jarak", "Euclidean vs DTW vs FastDTW pada representasi pilihan, lengkap dengan jalur penyejajaran minggu.")
     codes = b["codes"].tolist()
     radius = b["res"]["metadata"]["distance"]["radius"]
     with st.container(border=True):
@@ -582,11 +579,11 @@ def page_clustering() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("04", "Hasil klasterisasi.", "Pilih representasi, algoritma, dan parameter, lalu tekan <b>Tampilkan hasil</b>. Semua model sudah dibangun di Colab dengan FastDTW.")
+    heading("04", "Klasterisasi", "Pilih representasi, algoritma, dan parameter, lalu tekan <b>Tampilkan hasil</b>. Semua model sudah dibangun di Colab dengan FastDTW.")
     cfg = b["res"]["metadata"]["config"]
     best = b["res"]["best"]
     with st.container(border=True):
-        section("Kontrol parameter", "Preset mengisi pilihan dengan model terbaik; ubah sesuai kebutuhan lalu tekan Tampilkan hasil.", "sliders")
+        section("Parameter", "", "sliders")
         st.selectbox("Preset", ["Kustom", *[r for r, k in best.items() if k]], key="cl_preset", on_change=_apply_preset,
                      format_func=lambda r: r if r == "Kustom" else f"Model terbaik · {REP_LABEL[r]} ({key_label(best[r]).split(' · ', 2)[0]})")
         c1, c2, c3, c4 = st.columns(4)
@@ -601,22 +598,12 @@ def page_clustering() -> None:
             k = c3.select_slider("Jumlah cluster K", cfg["K_GRID"], key="cl_k")
             extra = c4.selectbox("Linkage", cfg["LINKAGES"], key="cl_link") if algo == "agglomerative" else None
             key = ms.run_key(rep, algo, k, extra)
-        st.caption({"kmeans": "Centroid = barycenter DBA (rata-rata yang menghormati pergeseran waktu).",
-                    "kmedoids": "Centroid = medoid (produk nyata), PAM BUILD + SWAP.",
-                    "agglomerative": "Tidak punya pusat bawaan; medoid tiap cluster + dendrogram.",
-                    "dbscan": f"min_samples = {cfg['DBSCAN_MIN_SAMPLES']}; produk di wilayah jarang = noise.",
-                    "fcm": f"Fuzzy m = {cfg['FUZZINESS']}; centroid DBA berbobot keanggotaan.",
-                    "fcmdd": f"Fuzzy m = {cfg['FUZZINESS']}; centroid = medoid berbobot keanggotaan."}[algo])
     b1, b2 = st.columns([1, 3])
     if b1.button("Tampilkan hasil", type="primary", icon=":material/play_arrow:", width="stretch"):
         st.session_state["shown_key"] = key
         st.session_state["active_key"] = key
     shown = st.session_state.get("shown_key")
-    if shown and shown != key:
-        b2.warning("Pilihan berubah sejak hasil terakhir. Tekan **Tampilkan hasil** untuk memperbarui.", icon=":material/sync_problem:")
     if not shown:
-        st.markdown('<div class="callout"><b>Belum ada hasil.</b> Pilih skenario di atas lalu tekan <b>Tampilkan hasil</b>. '
-                    'Pilih <i>Preset</i> untuk langsung melihat model terbaik tiap representasi.</div>', unsafe_allow_html=True)
         return
     render_result(b, shown)
 
@@ -627,25 +614,20 @@ def render_result(b: dict, key: str) -> None:
     space = b["res"]["spaces"][rep]
     X, W, codes = b["X"][rep], b["W"], b["codes"]
     m = r.metrics
-    kpis([("Silhouette", fmt(m["Silhouette"]), f"{quality(m['Silhouette'])} · pemisahan antar-cluster (↑)", "target", "var(--cyan)"),
-          ("DBI (MDS)", fmt(m["DBI_MDS"]), "Davies–Bouldin: makin kecil makin terpisah (↓)", "scale", "var(--gold)"),
-          ("CHI (MDS)", idn(m["CHI_MDS"]), "Calinski–Harabasz: makin besar makin padat (↑)", "bars", "var(--emerald)"),
-          ("Balance", fmt(m["Balance"]), "1 = ukuran cluster seimbang", "layers", "var(--cyan)"),
+    kpis([("Silhouette", fmt(m["Silhouette"]), f"{quality(m['Silhouette'])} · makin tinggi makin baik", "target", "var(--cyan)"),
+          ("DBI (MDS)", fmt(m["DBI_MDS"]), "makin kecil makin baik", "scale", "var(--gold)"),
+          ("CHI (MDS)", idn(m["CHI_MDS"]), "makin tinggi makin baik", "bars", "var(--emerald)"),
+          ("Balance", fmt(m["Balance"]), "1 = seimbang", "layers", "var(--cyan)"),
           ("Jumlah cluster", str(int(m["Cluster"])), f"coverage {idn(100 * m['Coverage'], 1)}%" + (f" · {int(m['Noise'])} noise" if m["Noise"] else ""), "network", "var(--gold)"),
-          ("η² minggu nol", fmt(m["Eta2_nol"]), "tinggi = cluster dipisah frekuensi nol", "zero", "var(--neg)")])
+          ("η² minggu nol", fmt(m["Eta2_nol"]), "makin kecil makin baik", "zero", "var(--neg)")])
     is_best = key in b["res"]["best"].values()
-    st.caption(f"{key_label(key)} · FastDTW · pusat: {ix.CENTER_KIND[r.center_kind]}" + (" · ★ model terbaik representasi ini" if is_best else ""))
-    for note in r.notes:
-        st.caption(f"• {note}")
-    if m["Cluster"] < 2:
-        st.warning("Hanya terbentuk satu cluster" + (" padat; sisanya noise. Pilih persentil eps lain." if algo == "dbscan" else "."), icon=":material/info:")
+    st.markdown(f'<div class="shown">{key_label(key)}' + ('<span class="pill ok">model terbaik</span>' if is_best else "") + "</div>", unsafe_allow_html=True)
     tabs = st.tabs(["Peta cluster & centroid", "Pola centroid", "Kualitas & diagnostik", "Profil & interpretasi", "Peta panas anggota"])
     with tabs[0]:
         c1, c2, _ = st.columns([1.2, 1, 2])
         shape = c1.segmented_control("Batas cluster", ["hull", "ellipse", "none"], default="hull", key="fv_shape",
                                      format_func={"hull": "Convex hull", "ellipse": "Elips 95%", "none": "Tanpa"}.get) or "hull"
         spider = c2.toggle("Garis ke centroid", key="fv_spider")
-        st.caption("Gaya `fviz_cluster`: koordinat MDS klasik dari matriks FastDTW. ◆ = centroid (DBA diproyeksikan formula Gower), ★ = medoid / produk representatif.")
         xy = np.array(space["xy"], dtype=float)
         plot(iv.fviz_cluster_figure(xy, np.array(space["explained"], dtype=float), r.labels, codes, r.center_xy, r.cluster_ids, r.medoids,
                                     r.center_kind, shape, spider, config, "Dim"), "fv_map")
@@ -678,7 +660,6 @@ def render_result(b: dict, key: str) -> None:
             section("Plot silhouette", "Gaya fviz_silhouette; batang < 0 = mungkin salah cluster.", "target")
             if np.isfinite(m["Silhouette"]):
                 plot(iv.fviz_silhouette_figure(r.silhouette, r.labels, codes, config), "q_sil")
-                st.caption(f"{100 * np.nanmean(r.silhouette[r.labels != -1] < 0):.1f}% produk bernilai negatif (lebih dekat ke cluster lain).")
         with c, st.container(border=True):
             section("Jarak anggota ke pusat", "Ekor panjang = anggota pinggiran.", "scale")
             plot(iv.distance_to_center_figure(r.dist_to_center, r.labels, codes, config), "q_d2c")
@@ -693,7 +674,7 @@ def render_result(b: dict, key: str) -> None:
         if r.membership is not None:
             with st.container(border=True):
                 section("Keanggotaan fuzzy", "", "layers")
-                st.caption(f"FPC {fmt(m.get('FPC'))} · entropi partisi {fmt(m.get('Entropi_partisi'))}. Mendekati 0,5 = produk di perbatasan.")
+                st.caption(f"FPC {fmt(m.get('FPC'))} · entropi partisi {fmt(m.get('Entropi_partisi'))}")
                 plot(iv.membership_stack_figure(r.membership, r.labels, codes, config), "q_mem")
         if algo != "dbscan":
             with st.container(border=True):
@@ -727,7 +708,6 @@ def render_result(b: dict, key: str) -> None:
                      column_config={c: st.column_config.NumberColumn(format="%.3f") for c in ["Silhouette", "Jarak_ke_pusat", "Keanggotaan"]})
         st.download_button("Unduh label (CSV)", members.to_csv(index=False).encode("utf-8-sig"), f"label_{key.replace('|', '_')}.csv", "text/csv", icon=":material/download:")
     with tabs[4]:
-        st.caption("Per cluster, diurutkan dari produk paling dekat ke pusat (atas) ke paling jauh (bawah).")
         plot(iv.cluster_heatmap_figure(X, r.labels, r.dist_to_center, codes, config), "hm")
 
 
@@ -738,10 +718,10 @@ def page_recommendation() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("05", "Model mana yang paling cocok?", "Model terbaik tiap representasi dipilih di Colab: lolos guardrail lalu peringkat rata-rata Silhouette↑, DBI↓, CHI↑.")
+    heading("05", "Rekomendasi Metode", "Model terbaik tiap representasi dipilih di Colab: lolos guardrail lalu peringkat rata-rata Silhouette↑, DBI↓, CHI↑.")
     res, meta = b["res"], b["res"]["metadata"]
     cfg = meta["config"]
-    st.caption(f"Guardrail: minimal {cfg['MIN_CLUSTERS']} cluster · Balance ≥ {cfg['MIN_BALANCE']} · noise ≤ {int(100 * cfg['MAX_NOISE_SHARE'])}% produk.")
+
     t1, t2, t3 = st.tabs(["Terbaik per representasi", "Peringkat per representasi", "Semua model"])
     with t1:
         best_cards(b, {rep: k for rep, k in res["best"].items() if k})
@@ -789,7 +769,7 @@ def page_methodology() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("06", "Dari data mentah menjadi pola.", "Alur singkat pembangunan model dan cara membaca hasilnya.")
+    heading("06", "Metodologi", "Alur singkat pembangunan model dan cara membaca hasilnya.")
     res = b["res"]
     meta, cfg = res["metadata"], res["metadata"]["config"]
     n_alg = len({k.split("|")[1] for k in res["runs"]})
@@ -821,13 +801,10 @@ def page_methodology() -> None:
         section("Model terbaik per representasi", "", "trophy")
         best_cards(b, {rep: k for rep, k in res["best"].items() if k})
 
-    with st.expander("Detail teknis & unduhan", icon=":material/settings:"):
-        st.json({"dibangun_utc": meta["created_at_utc"], "durasi_detik": meta["runtime_s"], "jarak": meta["distance"], "konfigurasi": cfg,
-                 "model_terbaik": res["best"], "stabilitas": meta.get("stability"), "versi": meta["versions"]}, expanded=False)
-        files = [p for p in sorted(config.RESULTS_DIR.iterdir()) if p.is_file()]
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-            for p in files:
-                z.write(p, arcname=f"hasil_model/{p.name}")
-        st.download_button("Unduh hasil_model.zip", buf.getvalue(), "hasil_model.zip", "application/zip", icon=":material/folder_zip:")
-    st.caption("Hasil bersifat deskriptif dari data historis, bukan prediksi.")
+    files = [p for p in sorted(config.RESULTS_DIR.iterdir()) if p.is_file()]
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in files:
+            z.write(p, arcname=f"hasil_model/{p.name}")
+    st.download_button("Unduh hasil_model.zip", buf.getvalue(), "hasil_model.zip", "application/zip", icon=":material/folder_zip:", type="primary")
+

@@ -27,7 +27,7 @@ MAX_NOISE_SHARE = 0.30  # DBSCAN: maksimal 30% produk noise
 MIN_CLUSTERS = 2
 
 # ---------------- Dashboard ----------------
-DEFAULT_REPRESENTATION = "minmax"
+DEFAULT_REPRESENTATION = "original"
 
 # Tema "Dark Analytics" (navy · electric cyan · golden yellow).
 # Warna cluster = langkah lebih dalam dari cyan/emas/emerald agar tervalidasi CVD & kontras di latar #0D2540.

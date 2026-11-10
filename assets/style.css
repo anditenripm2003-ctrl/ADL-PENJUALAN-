@@ -162,3 +162,18 @@ a{color:var(--cyan)!important;}
 .best .m,.best .s{padding-right:56px;}
 /* font Inter untuk teks isi (ikon Material tidak disentuh) */
 .stApp p,.stApp label,.stApp li,[data-testid="stMarkdownContainer"],[data-testid="stCaptionContainer"],[data-testid="stWidgetLabel"],.kv,.side-note,.side-foot,.nav-active{font-family:'Inter',system-ui,sans-serif!important;}
+
+/* ---------- v9: lebih lega, lebih sedikit teks ---------- */
+.page-head{display:flex;align-items:baseline;gap:14px;margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+.page-head span{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:800;font-size:1rem;color:var(--gold);letter-spacing:1px;}
+.page-head h1{margin:0!important;padding:0!important;font-size:1.9rem!important;}
+.section-title{margin:6px 0 14px;}
+.shown{display:flex;align-items:center;gap:12px;margin:22px 0 6px;font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:700;font-size:1.05rem;color:var(--ink);}
+[data-testid="stTabs"]{margin-top:16px;}
+[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:8px;border-bottom:1px solid var(--line);}
+[data-testid="stTabs"] [data-baseweb="tab"]{padding:10px 16px;}
+[data-testid="stTabs"] [data-baseweb="tab-panel"]{padding-top:22px;}
+[data-testid="stMain"] [data-testid="stVerticalBlock"]{gap:1.1rem;}
+.kpi>div:last-child{min-width:0;}
+.kpi{margin-bottom:6px;}
+.kpi-detail{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
