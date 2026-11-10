@@ -181,6 +181,85 @@ def best_cards(b: dict, keys: dict) -> None:
             f'<span>η² nol <b>{idn(m["Eta2_nol"], 3)}</b></span></div></div>', unsafe_allow_html=True)
 
 
+# =======================================================================================
+# Profil klaster untuk pembaca bisnis (murni turunan label + penjualan asli; tidak mengubah model)
+# =======================================================================================
+def cluster_story(b: dict, key: str) -> tuple[Any, pd.DataFrame]:
+    """Profil per cluster + julukan bisnis berdasarkan peringkat rata-rata penjualan mingguan."""
+    r = result(b, key)
+    prof = pd.DataFrame(ix.cluster_profile_rows(r, b["W"], b["codes"]))
+    real = prof[prof["Cluster"] != -1].sort_values("Rata2_Mingguan", ascending=False)
+    tag = {int(c): "" for c in prof["Cluster"]}
+    if len(real) >= 2:
+        tag[int(real["Cluster"].iloc[0])] = "Terlaris"
+        tag[int(real["Cluster"].iloc[-1])] = "Kurang laris"
+        for c in real["Cluster"].iloc[1:-1]:
+            tag[int(c)] = "Menengah"
+    prof["Julukan"] = [("Noise" if c == -1 else tag[int(c)] or "Satu cluster") for c in prof["Cluster"]]
+    return r, prof
+
+
+def cluster_cards(prof: pd.DataFrame) -> None:
+    rows = prof.to_dict("records")
+    for col, row in zip(st.columns(len(rows)), rows):
+        ch = row["Perubahan_13mg_%"]
+        color = V.cluster_color(row["Cluster"], config)
+        trend = "–" if not np.isfinite(ch) else f"{'+' if ch > 0 else '−'}{idn(abs(ch), 1)}%"
+        col.markdown(
+            f'<div class="persona" style="--accent:{color}"><div class="bar" style="background:{color}"></div>'
+            f'<div class="kpi-label">{V.cluster_name(row["Cluster"])} · {row["Julukan"]}</div><h4>{idn(row["Jumlah_Produk"])} produk</h4>'
+            f'<div class="meta"><span class="chip">{row["Persona"]}</span> <span class="chip">{row["Tren"]}</span></div>'
+            f'<div class="kv"><span>Rata-rata / minggu</span><b>{idn(row["Rata2_Mingguan"], 1)} unit</b></div>'
+            f'<div class="kv"><span>Porsi volume</span><b>{idn(row["Porsi_Volume_%"], 1)}%</b></div>'
+            f'<div class="kv"><span>13 mg awal → akhir</span><b>{trend}</b></div></div>', unsafe_allow_html=True)
+
+
+def product_table(W: np.ndarray, codes: np.ndarray, mask: np.ndarray) -> pd.DataFrame:
+    """Statistik per produk dalam satu cluster: rata-rata, variasi (CV), dan tren linear per minggu."""
+    G = W[mask]
+    mean = G.mean(axis=1)
+    cv = np.divide(G.std(axis=1), mean, out=np.full(len(G), np.nan), where=mean > 0)
+    t = np.arange(W.shape[1]) - (W.shape[1] - 1) / 2
+    slope = (G - mean[:, None]) @ t / (t @ t)
+    return pd.DataFrame({"Produk": codes[mask], "Rata-rata/minggu": mean, "Variasi (CV)": cv, "Tren/minggu": slope,
+                         "Pola": [list(map(float, g)) for g in G]}).sort_values("Rata-rata/minggu", ascending=False)
+
+
+def mean_cv_figure(W: np.ndarray, codes: np.ndarray, labels: np.ndarray):
+    """Tiap titik = 1 produk: rata-rata penjualan mingguan (log) vs kestabilan (CV)."""
+    import plotly.graph_objects as go
+    mean = W.mean(axis=1)
+    cv = np.divide(W.std(axis=1), mean, out=np.full(len(W), np.nan), where=mean > 0)
+    fig = go.Figure()
+    for c in sorted(set(labels.tolist())):
+        m = (labels == c) & (mean > 0)
+        fig.add_trace(go.Scatter(x=mean[m], y=cv[m], mode="markers", name=V.cluster_name(c), text=codes[m],
+                                 marker=dict(size=7, color=V.cluster_color(c, config), opacity=0.8, line=dict(width=0.5, color=config.PLOT_SURFACE)),
+                                 hovertemplate="%{text}<br>Rata-rata: %{x:.1f} unit/minggu<br>CV: %{y:.2f}<extra>" + V.cluster_name(c) + "</extra>"))
+    fig.update_xaxes(type="log", title_text="Rata-rata penjualan / minggu (skala log)")
+    fig.update_yaxes(title_text="Variasi (CV) · makin kecil makin stabil")
+    return V.style_figure(fig, None, 340, config)
+
+
+def product_series_figure(y: np.ndarray, name: str, color: str):
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Scatter(x=np.arange(len(y)), y=y, mode="lines+markers", name=name, line=dict(color=color, width=2.4), marker=dict(size=5),
+                               hovertemplate="W%{x}: %{y:,.0f} unit<extra></extra>"))
+    fig.add_hline(y=float(np.mean(y)), line_dash="dot", line_color=config.PLOT_ACCENT, line_width=1.5,
+                  annotation_text=f"rata-rata {idn(np.mean(y), 1)}", annotation_font_color=config.PLOT_ACCENT)
+    fig.update_xaxes(title_text="Minggu", tickmode="array", tickvals=list(range(0, len(y), 8)), ticktext=[f"W{t}" for t in range(0, len(y), 8)])
+    fig.update_yaxes(title_text="Unit terjual", rangemode="tozero")
+    fig.update_layout(showlegend=False)
+    return V.style_figure(fig, None, 330, config)
+
+
+def drop_story(totals: np.ndarray) -> dict:
+    """Penurunan paling dalam setelah puncak, dan pemulihan di akhir periode (hitungan langsung dari total mingguan)."""
+    p = int(totals.argmax())
+    t = p + int(totals[p:].argmin())
+    return {"peak": p, "trough": t, "drop": 100 * (totals[t] - totals[p]) / totals[p], "last": float(totals[-1]), "recover": 100 * totals[-1] / totals[p]}
+
+
 def heading(number: str, title: str, subtitle: str) -> None:
     st.markdown(f'<div class="eyebrow">{number} · Ruang Sales</div>', unsafe_allow_html=True)
     st.title(title)
@@ -282,46 +361,103 @@ def page_overview() -> None:
         st.write("")
         best_cards(b, keys)
     st.write("")
+    story = drop_story(totals)
     left, right = st.columns([1.55, 1], gap="medium")
     with left, st.container(border=True):
-        section("Perjalanan penjualan mingguan", "Total semua produk (cyan) dan rata-rata bergerak 4 minggu (kuning). W0–W51 = urutan minggu, bukan tanggal kalender.", "trend")
-        plot(V.create_weekly_sales_figure(weekly, config), "ov_weekly")
-        st.caption(f"Penjualan turun {idn(abs(half), 1)}% pada paruh kedua; penurunan paling tajam setelah puncak W{totals.argmax()}." if half < 0
-                   else f"Penjualan naik {idn(half, 1)}% pada paruh kedua.")
+        section("Perjalanan penjualan mingguan", "Total semua produk dan rata-rata bergerak 4 minggu. Area emas = penurunan terdalam.", "trend")
+        fig = V.create_weekly_sales_figure(weekly, config)
+        if story["trough"] > story["peak"]:
+            fig.add_vrect(x0=story["peak"], x1=story["trough"], fillcolor=config.PLOT_ACCENT, opacity=0.14, line_width=0)
+        plot(fig, "ov_weekly")
+        st.markdown(f'<div class="takeaway">Penjualan turun <b>{idn(abs(story["drop"]), 1)}%</b> dalam {story["trough"] - story["peak"]} minggu '
+                    f'(W{story["peak"]} → W{story["trough"]}), lalu pulih ke <b>{idn(story["last"])}</b> unit di akhir periode '
+                    f'(<b>{idn(story["recover"], 0)}%</b> dari puncak).</div>', unsafe_allow_html=True)
     with right, st.container(border=True):
-        section("Konsentrasi volume (Pareto)", "Produk diurutkan dari volume terbesar; garis titik = distribusi merata.", "bars")
+        section("Konsentrasi volume (Pareto)", "Produk diurutkan dari volume terbesar.", "bars")
         plot(V.create_pareto_figure(stats, config), "ov_pareto")
-        st.caption(f"20% produk teratas menyumbang {idn(top20, 1)}% volume.")
+        st.markdown(f'<div class="takeaway"><b>20%</b> produk teratas menyumbang <b>{idn(top20, 1)}%</b> volume.</div>', unsafe_allow_html=True)
+
+    # ---- Profil klaster model aktif ----
+    key = active_key(b)
+    r, prof = cluster_story(b, key)
+    labels = r.labels
+    codes = b["codes"]
+    st.markdown(f'<div class="band">{icon("network", 22)}<div><div class="band-t">Profil klaster</div>'
+                f'<div class="band-s">Model aktif: {key_label(key)}</div></div></div>', unsafe_allow_html=True)
+    cluster_cards(prof)
+    st.write("")
+    a, c = st.columns(2, gap="medium")
+    with a, st.container(border=True):
+        section("Pola rata-rata mingguan tiap klaster", "Rata-rata penjualan asli anggota klaster.", "trend")
+        if len(r.cluster_ids):
+            centers = np.stack([W[labels == cid].mean(axis=0) for cid in r.cluster_ids])
+            plot(iv.centroid_overlay_figure(centers, r.cluster_ids, "mean", "Unit terjual (rata-rata)", config), "ov_pattern")
+    with c, st.container(border=True):
+        section("Rata-rata penjualan vs kestabilan", "Tiap titik = 1 produk.", "target")
+        plot(mean_cv_figure(W, codes, labels), "ov_meancv")
+
+    with st.container(border=True):
+        section("Produk teratas per klaster", "Pilih klaster, lalu pilih produk untuk melihat deret mingguannya.", "trophy")
+        names = {f'{V.cluster_name(row["Cluster"])} · {row["Julukan"]}': int(row["Cluster"]) for row in prof.to_dict("records")}
+        a, c = st.columns([1, 1.25], gap="medium")
+        with a:
+            pick = st.selectbox("Pilih klaster", list(names), key="ov_cluster")
+            cid = names.get(pick, next(iter(names.values())))
+            table = product_table(W, codes, labels == cid)
+            st.dataframe(table.head(15), hide_index=True, width="stretch", height=330,
+                         column_config={"Rata-rata/minggu": st.column_config.NumberColumn(format="%.2f"), "Variasi (CV)": st.column_config.NumberColumn(format="%.2f"),
+                                        "Tren/minggu": st.column_config.NumberColumn(format="%+.2f"), "Pola": st.column_config.LineChartColumn(width="small")})
+        with c:
+            options = table["Produk"].tolist()
+            product = st.selectbox("Lihat deret mingguan produk (bisa diketik untuk mencari)", options, key=f"ov_product_{cid}")
+            if product in options:
+                plot(product_series_figure(W[int(np.flatnonzero(codes == product)[0])], product, V.cluster_color(cid, config)), "ov_series")
+
+    # ---- Perbandingan representasi ----
     a, c = st.columns([1.55, 1], gap="medium")
     with a, st.container(border=True):
-        section("Hasil klasterisasi", "Ringkasan model terbaik pada tiga representasi data.", "layers")
+        section("Hasil klasterisasi", "Model terbaik pada tiga representasi data.", "layers")
         rows = []
-        for rep, key in keys.items():
-            m = res["runs"][key]["metrics"]
-            rows.append({"Representasi": REP_LABEL[rep], "Model terbaik": key_label(key).split(" · ")[0] + " · " + key_label(key).split(" · ")[-1],
+        for rep, bkey in keys.items():
+            m = res["runs"][bkey]["metrics"]
+            rows.append({"Representasi": REP_LABEL[rep], "Model terbaik": key_label(bkey).split(" · ")[0] + " · " + key_label(bkey).split(" · ")[-1],
                          "Silhouette": m["Silhouette"], "DBI": m["DBI_MDS"], "CHI": m["CHI_MDS"], "Balance": m["Balance"], "Cluster": m["Cluster"],
                          "η² nol": m["Eta2_nol"], "Stabilitas": res["metadata"].get("stability", {}).get(rep, {}).get("status", "–")})
         st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch",
                      column_config={c2: st.column_config.NumberColumn(format="%.3f") for c2 in ["Silhouette", "DBI", "Balance", "η² nol"]} | {"CHI": st.column_config.NumberColumn(format="%.0f")})
-        st.caption("Silhouette antar-representasi tidak sepenuhnya setara (ruang jarak berbeda); baca bersama Balance dan η² minggu nol.")
     with c, st.container(border=True):
-        section("Kesamaan pembagian produk (ARI)", "1 = identik, 0 = acak. Konsistensi hasil antar-representasi.", "grid")
+        section("Kesamaan pembagian produk (ARI)", "1 = identik, 0 = acak.", "grid")
         if len(keys) >= 2:
-            names = [REP_LABEL[r].split(" (")[0] for r in keys]
-            ari = pd.DataFrame([[adjusted_rand_score(res["runs"][keys[x]]["labels"], res["runs"][keys[y]]["labels"]) for y in keys] for x in keys], index=names, columns=names)
+            rnames = [REP_LABEL[x].split(" (")[0] for x in keys]
+            ari = pd.DataFrame([[adjusted_rand_score(res["runs"][keys[x]]["labels"], res["runs"][keys[y]]["labels"]) for y in keys] for x in keys], index=rnames, columns=rnames)
             fig = V.create_similarity_heatmap(ari, "ARI", config)
-            fig.update_layout(height=330)
+            fig.update_layout(height=300)
             plot(fig, "ov_ari")
+
     a, c = st.columns(2, gap="medium")
-    key = active_key(b)
-    labels = np.asarray(res["runs"][key]["labels"])
     with a, st.container(border=True):
-        section("10 produk dengan volume tertinggi", f"Warna = cluster model aktif ({key_label(key)}).", "trophy")
-        plot(V.create_top_products_figure(stats, 10, config, dict(zip(b["codes"], labels))), "ov_top")
+        section("10 produk dengan volume tertinggi", "Warna = klaster model aktif.", "trophy")
+        plot(V.create_top_products_figure(stats, 10, config, dict(zip(codes, labels))), "ov_top")
     with c, st.container(border=True):
-        section("Produk aktif & minggu tanpa penjualan", "Persentase produk terjual per minggu, lalu sebaran jumlah minggu nol per produk.", "zero")
+        section("Produk aktif & minggu tanpa penjualan", "", "zero")
         plot(V.create_active_products_figure(weekly, config), "ov_active")
         plot(V.create_zero_weeks_figure(stats, config), "ov_zero")
+
+    # ---- Insight utama (semua angka dihitung langsung dari data & hasil model) ----
+    real = prof[prof["Cluster"] != -1].sort_values("Rata2_Mingguan", ascending=False)
+    points = [f'Puncak penjualan terjadi pada <b>W{story["peak"]}</b> ({idn(totals.max())} unit).',
+              f'Penurunan terdalam <b>{idn(abs(story["drop"]), 1)}%</b> (W{story["peak"]} → W{story["trough"]}); akhir periode pulih ke {idn(story["recover"], 0)}% dari puncak.',
+              f'<b>{idn(top20, 1)}%</b> volume berasal dari 20% produk teratas.',
+              f'Rata-rata <b>{idn(weekly["Persen_Produk_Aktif"].mean(), 1)}%</b> produk aktif tiap minggu; {idn(100 * (W == 0).mean(), 1)}% sel bernilai nol.']
+    if len(real) >= 2:
+        top, low = real.iloc[0], real.iloc[-1]
+        points.append(f'{V.cluster_name(top["Cluster"])} (terlaris): <b>{idn(top["Jumlah_Produk"])} produk</b> menyumbang {idn(top["Porsi_Volume_%"], 1)}% volume; '
+                      f'{V.cluster_name(low["Cluster"])} (kurang laris): {idn(low["Jumlah_Produk"])} produk, {idn(low["Porsi_Volume_%"], 1)}% volume.')
+    if keys:
+        points.append("Model terbaik: " + "; ".join(f'<b>{key_label(k).split(" · ")[0]}</b> ({REP_LABEL[rep].split(" (")[0]})' for rep, k in keys.items()) + ".")
+    with st.container(border=True):
+        section("Insight utama", "", "info")
+        st.markdown('<div class="insights">' + "".join(f'<div class="ins"><span>✓</span><div>{t}</div></div>' for t in points) + "</div>", unsafe_allow_html=True)
 
 
 # =======================================================================================
@@ -653,35 +789,45 @@ def page_methodology() -> None:
     b = need_bundle()
     if b is None:
         return
-    heading("06", "Dari data mentah menjadi pola.", "Alur pembangunan model di Colab dan cara membaca metriknya.")
-    meta = b["res"]["metadata"]
-    cfg = meta["config"]
-    steps = [("01", "Baca & validasi", "CSV Product_Code + W0–W51 (pemisah ; atau , otomatis), 811 produk × 52 minggu."),
-             ("02", "Tiga representasi", "Data asli, Min-Max per produk (0–1), Scale/z-score per produk."),
-             ("03", f"FastDTW r={meta['distance']['radius']}", "Satu matriks jarak 811 × 811 per representasi (numba)."),
-             ("04", "Enam algoritma", f"K-Means DBA, K-Medoids PAM, Agglomerative, DBSCAN, Fuzzy C-Means DBA, Fuzzy C-Medoids · K {cfg['K_GRID']}."),
-             ("05", "Evaluasi & pilih", "Silhouette, DBI/CHI pada MDS, Balance, η² minggu nol; guardrail lalu peringkat.")]
-    for col, (n, t, d) in zip(st.columns(5), steps):
-        col.markdown(f'<div class="persona" style="min-height:170px"><div class="step-n">{n}</div><h4 style="font-size:16px">{t}</h4><div class="meta">{d}</div></div>', unsafe_allow_html=True)
-    st.write("")
-    a, c = st.columns(2, gap="medium")
+    heading("06", "Dari data mentah menjadi pola.", "Alur singkat pembangunan model dan cara membaca hasilnya.")
+    res = b["res"]
+    meta, cfg = res["metadata"], res["metadata"]["config"]
+    n_alg = len({k.split("|")[1] for k in res["runs"]})
+    steps = [("table", "Data", f"{idn(meta['n_products'])} produk × {meta['n_weeks']} minggu"),
+             ("layers", "Representasi", "Data asli · Min-Max · Scale"),
+             ("trend", "Jarak", f"FastDTW radius {meta['distance']['radius']}"),
+             ("network", "Klasterisasi", f"{n_alg} algoritma · K {min(cfg['K_GRID'])}–{max(cfg['K_GRID'])}"),
+             ("trophy", "Pemilihan", f"{idn(len(res['runs']))} model → 1 terbaik per representasi")]
+    st.markdown('<div class="flow">' + "".join(
+        f'<div class="flow-step"><div class="flow-ic">{icon(ic, 22)}</div><div class="flow-n">0{i}</div><div class="flow-t">{t}</div><div class="flow-d">{d}</div></div>'
+        for i, (ic, t, d) in enumerate(steps, 1)) + "</div>", unsafe_allow_html=True)
+
+    a, c = st.columns([1.5, 1], gap="medium")
     with a, st.container(border=True):
-        section("Kamus metrik", "", "info")
-        for term, desc in [("Silhouette", "Pemisahan vs kekompakan pada matriks FastDTW; −1…1, lebih tinggi lebih baik (> 0,25 = struktur lemah, > 0,5 = wajar)."),
-                           ("DBI & CHI (MDS)", "Dihitung pada embedding MDS 5 dimensi dari matriks FastDTW. DBI ↓, CHI ↑."),
-                           ("Balance", "Entropi ukuran cluster ternormalisasi; 1 = seimbang, 0 = satu cluster dominan."),
-                           ("η² minggu nol", "Seberapa besar variasi jumlah minggu nol dijelaskan label; tinggi = cluster didorong frekuensi nol, bukan bentuk."),
-                           ("ARI", "Kesamaan dua pembagian produk (antar-representasi / antar-seed); bukan akurasi.")]:
-            st.markdown(f"**{term}**")
-            st.caption(desc)
+        section("Cara membaca metrik", "", "target")
+        metrics = [("Silhouette", "↑", "Pemisahan antar-klaster (−1 sampai 1)."), ("DBI", "↓", "Tumpang-tindih klaster; kecil = terpisah."),
+                   ("CHI", "↑", "Kepadatan klaster; besar = padat."), ("Balance", "↑", "Keseimbangan ukuran klaster (0–1)."),
+                   ("η² minggu nol", "↓", "Tinggi = klaster hanya memisah produk jarang laku."), ("ARI", "↑", "Kesamaan dua pembagian produk (0–1).")]
+        st.markdown('<div class="mgrid">' + "".join(
+            f'<div class="mcard"><div class="mhead"><b>{n}</b><span class="{"up" if d == "↑" else "down"}">{d}</span></div><div class="mdesc">{t}</div></div>'
+            for n, d, t in metrics) + "</div>", unsafe_allow_html=True)
     with c, st.container(border=True):
-        section("Konfigurasi pembangunan model", "", "sliders")
+        section("Aturan memilih model terbaik", "", "filter")
+        rules = [("1", f"Minimal {cfg['MIN_CLUSTERS']} klaster"), ("2", f"Balance ≥ {idn(cfg['MIN_BALANCE'], 1)}"),
+                 ("3", f"Noise ≤ {idn(100 * cfg['MAX_NOISE_SHARE'], 0)}% produk"), ("4", "Peringkat rata-rata Silhouette ↑, DBI ↓, CHI ↑")]
+        st.markdown('<div class="rules">' + "".join(f'<div class="rule"><span>{n}</span><div>{t}</div></div>' for n, t in rules) + "</div>", unsafe_allow_html=True)
+
+    with st.container(border=True):
+        section("Model terbaik per representasi", "", "trophy")
+        best_cards(b, {rep: k for rep, k in res["best"].items() if k})
+
+    with st.expander("Detail teknis & unduhan", icon=":material/settings:"):
         st.json({"dibangun_utc": meta["created_at_utc"], "durasi_detik": meta["runtime_s"], "jarak": meta["distance"], "konfigurasi": cfg,
-                 "model_terbaik": b["res"]["best"], "stabilitas": meta.get("stability"), "versi": meta["versions"]}, expanded=False)
-    files = [p for p in sorted(config.RESULTS_DIR.iterdir()) if p.is_file()]
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        for p in files:
-            z.write(p, arcname=f"hasil_model/{p.name}")
-    st.download_button("Unduh hasil_model.zip", buf.getvalue(), "hasil_model.zip", "application/zip", icon=":material/folder_zip:")
-    st.warning("Hasil bersifat deskriptif/eksploratif dari data historis, bukan prediksi. Validasi interpretasi cluster dengan konteks bisnis.", icon=":material/info:")
+                 "model_terbaik": res["best"], "stabilitas": meta.get("stability"), "versi": meta["versions"]}, expanded=False)
+        files = [p for p in sorted(config.RESULTS_DIR.iterdir()) if p.is_file()]
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            for p in files:
+                z.write(p, arcname=f"hasil_model/{p.name}")
+        st.download_button("Unduh hasil_model.zip", buf.getvalue(), "hasil_model.zip", "application/zip", icon=":material/folder_zip:")
+    st.caption("Hasil bersifat deskriptif dari data historis, bukan prediksi.")

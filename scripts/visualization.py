@@ -29,7 +29,7 @@ _DEFAULTS = {
     "PLOT_MUTED": "#A9BDCF",
     "PLOT_GRID": "rgba(22,73,106,0.55)",
     "PLOT_SURFACE": "#0D2540",
-    "PLOT_PAPER": "#0D2540",
+    "PLOT_PAPER": "rgba(0,0,0,0)",
     "PLOT_NEUTRAL": "#4A6B86",
     "PLOT_ALERT": "#FF647C",
     "PLOT_HOVER_BG": "#0B2945",

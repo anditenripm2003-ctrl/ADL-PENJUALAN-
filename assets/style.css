@@ -126,3 +126,39 @@ a{color:var(--cyan)!important;}
 .section-title svg{filter:drop-shadow(0 0 6px rgba(0,213,242,.7));}
 [data-testid="stAppViewContainer"]:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(900px 420px at 12% 105%,rgba(10,128,174,.12),transparent 60%);}
 [data-testid="stHeader"]{background:transparent!important;}
+
+/* ---------- v7: cerita klaster, insight, metodologi ---------- */
+.persona{border-color:color-mix(in srgb,var(--accent,var(--cyan)) 55%,var(--line));box-shadow:0 0 22px color-mix(in srgb,var(--accent,var(--cyan)) 16%,transparent);}
+.persona .kpi-label{color:var(--accent,var(--cyan));font-weight:700;letter-spacing:.6px;text-transform:uppercase;font-size:.74rem;}
+.persona .meta{margin:2px 0 10px;display:flex;gap:6px;flex-wrap:wrap;}
+.persona .kv{border-top:1px solid rgba(22,73,106,.6);padding:6px 0 0;margin-top:6px;color:var(--ink-2);}
+.takeaway{border-left:3px solid var(--gold);background:rgba(255,209,102,.06);border-radius:0 10px 10px 0;padding:9px 14px;color:var(--ink-2);font-size:.9rem;line-height:1.5;}
+.takeaway b{color:var(--gold);}
+.band{display:flex;align-items:center;gap:14px;margin:26px 0 14px;padding:14px 18px;border-radius:var(--radius);color:var(--cyan);
+  background:linear-gradient(90deg,rgba(0,213,242,.16),rgba(0,213,242,0) 70%);border-left:3px solid var(--cyan);}
+.band-t{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:800;font-size:1.3rem;color:var(--ink);line-height:1.2;}
+.band-s{color:var(--ink-2);font-size:.86rem;}
+.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;}
+.ins{display:flex;gap:10px;align-items:flex-start;color:var(--ink-2);font-size:.92rem;line-height:1.5;}
+.ins span{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#06172B;background:var(--emerald);box-shadow:0 0 12px rgba(0,201,167,.5);}
+.ins b{color:var(--ink);}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin:6px 0 18px;}
+.flow-step{position:relative;background:linear-gradient(160deg,var(--card-2),var(--card));border:1px solid rgba(0,213,242,.28);border-radius:var(--radius);padding:16px;box-shadow:var(--glow);}
+.flow-step:not(:last-child):after{content:"›";position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--cyan);font-size:22px;font-weight:800;text-shadow:0 0 10px rgba(0,213,242,.8);z-index:2;}
+.flow-ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:var(--cyan);border:1px solid rgba(0,213,242,.4);background:rgba(0,213,242,.08);margin-bottom:10px;}
+.flow-n{position:absolute;right:14px;top:12px;font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:800;font-size:1.5rem;color:rgba(0,213,242,.28);}
+.flow-t{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:800;font-size:1.05rem;color:var(--ink);}
+.flow-d{color:var(--ink-2);font-size:.84rem;margin-top:3px;line-height:1.4;}
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.mcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02);}
+.mhead{display:flex;justify-content:space-between;align-items:center;color:var(--ink);font-size:.98rem;}
+.mhead span{font-weight:800;font-size:1.05rem;}
+.mhead .up{color:var(--emerald);} .mhead .down{color:var(--gold);}
+.mdesc{color:var(--ink-2);font-size:.82rem;line-height:1.4;margin-top:4px;}
+.rules{display:grid;gap:9px;}
+.rule{display:flex;gap:12px;align-items:center;color:var(--ink);font-size:.92rem;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.02);}
+.rule span{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:800;color:var(--gold);border:1px solid rgba(255,209,102,.5);background:rgba(255,209,102,.08);}
+@media (max-width:900px){.flow{grid-template-columns:repeat(2,minmax(0,1fr));}.flow-step:after{display:none;}.mgrid,.insights{grid-template-columns:1fr;}}
+.best .m,.best .s{padding-right:56px;}
+/* font Inter untuk teks isi (ikon Material tidak disentuh) */
+.stApp p,.stApp label,.stApp li,[data-testid="stMarkdownContainer"],[data-testid="stCaptionContainer"],[data-testid="stWidgetLabel"],.kv,.side-note,.side-foot,.nav-active{font-family:'Inter',system-ui,sans-serif!important;}
