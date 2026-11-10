@@ -29,13 +29,21 @@ MIN_CLUSTERS = 2
 # ---------------- Dashboard ----------------
 DEFAULT_REPRESENTATION = "minmax"
 
-PLOT_FONT = "Plus Jakarta Sans, Arial"
-PLOT_PRIMARY = "#00806A"
-PLOT_ACCENT = "#E06C2B"
-PLOT_PALETTE = ["#00806A", "#E06C2B", "#3A6FD9", "#C8457F", "#7B5BD6"]
-PLOT_NOISE = "#9AA39E"
-PLOT_INK = "#13201B"
-PLOT_MUTED = "#6B7770"
-PLOT_GRID = "#EEEBE2"
-PLOT_SEQUENTIAL = ["#F5F3EC", "#BFE3D6", "#55B196", "#00806A", "#00483A"]
-PLOT_SEQUENTIAL_WARM = ["#FBEFE7", "#F6CFB6", "#EDA47C", "#E06C2B", "#A9481A"]
+# Tema "Dark Analytics" (navy · electric cyan · golden yellow).
+# Warna cluster = langkah lebih dalam dari cyan/emas/emerald agar tervalidasi CVD & kontras di latar #0D2540.
+PLOT_FONT = "Inter, Plus Jakarta Sans, Arial"
+PLOT_PRIMARY = "#00D5F2"      # electric cyan — seri utama
+PLOT_ACCENT = "#FFD166"       # golden yellow — sorotan / pembanding
+PLOT_EMERALD = "#00C9A7"
+PLOT_PALETTE = ["#0A9CC9", "#B88A12", "#1FA884", "#8E72EA", "#E35D8A"]   # C0..C4 (urutan tetap)
+PLOT_NOISE = "#718BA3"
+PLOT_INK = "#EAF2FA"
+PLOT_MUTED = "#A9BDCF"
+PLOT_GRID = "rgba(22,73,106,0.55)"
+PLOT_SURFACE = "#0D2540"
+PLOT_PAPER = "#0D2540"
+PLOT_NEUTRAL = "#4A6B86"
+PLOT_ALERT = "#FF647C"
+PLOT_HOVER_BG = "#0B2945"
+PLOT_SEQUENTIAL = ["#0D2540", "#0E3A5C", "#0B5E86", "#0A80AE", "#0AA6D6"]
+PLOT_SEQUENTIAL_WARM = ["#0D2540", "#3A3524", "#6E5A24", "#A68325", "#E0B341"]

@@ -17,7 +17,7 @@ from plotly.subplots import make_subplots
 from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial import ConvexHull
 
-from scripts.visualization import WEEK_TICKS, _cfg, _hex_to_rgba, cluster_color, cluster_name, style_figure
+from scripts.visualization import WEEK_TICKS, _cfg, _hex_to_rgba, _scale, cluster_color, cluster_name, style_figure
 
 SYMBOLS = ["circle", "triangle-up", "square", "diamond", "cross", "x", "pentagon", "star-triangle-up"]
 
@@ -88,7 +88,7 @@ def fviz_cluster_figure(
             x=pts[:, 0], y=pts[:, 1], mode="markers", name=f"{cluster_name(cluster_id)} · {mask.sum()}",
             legendgroup=str(cluster_id), customdata=codes[mask],
             marker=dict(size=7, color=color if cluster_id != -1 else _cfg(config, "PLOT_NOISE"), symbol=_symbol(cluster_id),
-                        opacity=0.7, line=dict(color="#fff", width=0.5)),
+                        opacity=0.7, line=dict(color=_cfg(config, "PLOT_SURFACE"), width=0.5)),
             hovertemplate="<b>%{customdata}</b><br>" + cluster_name(cluster_id) + "<extra></extra>",
         ))
     if len(cluster_ids):
@@ -105,13 +105,13 @@ def fviz_cluster_figure(
         if center_kind != "medoid":
             fig.add_trace(go.Scatter(
                 x=xy[medoids, 0], y=xy[medoids, 1], mode="markers", name="Medoid (produk representatif)",
-                marker=dict(size=13, symbol="star", color="#fff", line=dict(color=_cfg(config, "PLOT_INK"), width=1.6)),
+                marker=dict(size=13, symbol="star", color=_cfg(config, "PLOT_SURFACE"), line=dict(color=_cfg(config, "PLOT_INK"), width=1.6)),
                 customdata=codes[medoids], hovertemplate="Medoid %{customdata}<extra></extra>",
             ))
     ex = list(explained) + [0, 0]
     fig.update_xaxes(title_text=f"{axis_name}1 ({100 * ex[0]:.1f}%)", showgrid=True, gridcolor=_cfg(config, "PLOT_GRID"),
-                     zeroline=True, zerolinecolor="#D7D2C4")
-    fig.update_yaxes(title_text=f"{axis_name}2 ({100 * ex[1]:.1f}%)", zeroline=True, zerolinecolor="#D7D2C4")
+                     zeroline=True, zerolinecolor=_cfg(config, "PLOT_NEUTRAL"))
+    fig.update_yaxes(title_text=f"{axis_name}2 ({100 * ex[1]:.1f}%)", zeroline=True, zerolinecolor=_cfg(config, "PLOT_NEUTRAL"))
     return style_figure(fig, None, 520, config)
 
 
@@ -196,7 +196,7 @@ def fviz_silhouette_figure(silhouette: np.ndarray, labels: np.ndarray, codes: np
                              marker=dict(color=cluster_color(c, config), line=dict(width=0)), customdata=part["code"],
                              hovertemplate="%{customdata}<br>Silhouette %{y:.3f}<extra></extra>"))
     if len(frame):
-        fig.add_hline(y=frame["s"].mean(), line=dict(color="#C0392B", dash="dash", width=1.5),
+        fig.add_hline(y=frame["s"].mean(), line=dict(color=_cfg(config, "PLOT_ALERT"), dash="dash", width=1.5),
                       annotation_text=f"rata-rata {frame['s'].mean():.3f}", annotation_position="top right")
     fig.update_layout(bargap=0)
     fig.update_xaxes(showticklabels=False, title_text="Produk (diurutkan per cluster)")
@@ -225,12 +225,12 @@ def fviz_dend_figure(linkage_matrix: np.ndarray, labels: np.ndarray, k: int, con
         bucket[1].extend([height[a], h, h, height[b], None])
     fig = go.Figure()
     for c, (xs, ds) in sorted(segments.items()):
-        color = "#B9B3A4" if c == -2 else cluster_color(c, config)
+        color = _cfg(config, "PLOT_NEUTRAL") if c == -2 else cluster_color(c, config)
         fig.add_trace(go.Scatter(x=xs, y=ds, mode="lines", line=dict(color=color, width=1.1), hoverinfo="skip",
                                  name="di atas potongan" if c == -2 else cluster_name(c), showlegend=c != -2))
     if k >= 2 and len(Z) >= k:
         cut = (Z[-k, 2] + Z[-k + 1, 2]) / 2 if k > 1 else Z[-1, 2]
-        fig.add_hline(y=cut, line=dict(color="#C0392B", dash="dash", width=1.4), annotation_text=f"potong k = {k}",
+        fig.add_hline(y=cut, line=dict(color=_cfg(config, "PLOT_ALERT"), dash="dash", width=1.4), annotation_text=f"potong k = {k}",
                       annotation_position="top left")
     fig.update_xaxes(showticklabels=False, title_text=f"{n} produk (urutan daun dendrogram)", range=[0, 10 * n])
     fig.update_yaxes(title_text="Tinggi penggabungan (jarak)")
@@ -247,7 +247,7 @@ def fviz_nbclust_figure(rows: list[dict], chosen_k: int | None = None, config: o
                              marker=dict(size=9), showlegend=False, hovertemplate="k=%{x}<br>%{y:,.1f}<extra></extra>"), row=1, col=1)
     fig.add_trace(go.Scatter(x=frame["k"], y=frame["Silhouette"], mode="lines+markers", line=dict(color=primary, width=2.4),
                              marker=dict(size=9), showlegend=False, hovertemplate="k=%{x}<br>%{y:.3f}<extra></extra>"), row=1, col=2)
-    for k, color, label in [(best_k, "#C0392B", "terbaik"), (chosen_k, _cfg(config, "PLOT_ACCENT"), "dipilih")]:
+    for k, color, label in [(best_k, _cfg(config, "PLOT_ALERT"), "terbaik"), (chosen_k, _cfg(config, "PLOT_ACCENT"), "dipilih")]:
         if k is not None:
             for col in (1, 2):
                 fig.add_vline(x=k, line=dict(color=color, dash="dash", width=1.3), row=1, col=col)
@@ -262,7 +262,7 @@ def knn_distance_figure(kdist: np.ndarray, eps: float | None, k: int, config: ob
     fig = go.Figure(go.Scatter(x=np.arange(len(kdist)), y=kdist, mode="lines", line=dict(color=_cfg(config, "PLOT_PRIMARY"), width=2.2),
                                hovertemplate="titik ke-%{x}<br>jarak %{y:.4g}<extra></extra>", name=f"jarak tetangga ke-{k}"))
     if eps is not None:
-        fig.add_hline(y=eps, line=dict(color="#C0392B", dash="dash", width=1.5), annotation_text=f"eps = {eps:.4g}",
+        fig.add_hline(y=eps, line=dict(color=_cfg(config, "PLOT_ALERT"), dash="dash", width=1.5), annotation_text=f"eps = {eps:.4g}",
                       annotation_position="top left")
     fig.update_xaxes(title_text="Produk diurutkan menurut jarak")
     fig.update_yaxes(title_text=f"Jarak ke tetangga ke-{k}")
@@ -289,7 +289,7 @@ def center_distance_figure(center_matrix: np.ndarray, cluster_ids: np.ndarray, c
     """Jarak antar-pusat cluster (makin jauh = makin terpisah)."""
     names = [cluster_name(c) for c in cluster_ids]
     fig = go.Figure(go.Heatmap(z=center_matrix, x=names, y=names, text=np.round(center_matrix, 3), texttemplate="%{text}",
-                               colorscale=[[0, "#F5F3EC"], [1, _cfg(config, "PLOT_PRIMARY")]], showscale=False, xgap=3, ygap=3,
+                               colorscale=_scale(_cfg(config, "PLOT_SEQUENTIAL")), showscale=False, xgap=3, ygap=3,
                                hovertemplate="%{y} ↔ %{x}: %{z:.3f}<extra></extra>"))
     fig.update_yaxes(autorange="reversed", showgrid=False)
     return style_figure(fig, None, 260, config)
@@ -323,7 +323,7 @@ def dtw_alignment_figure(a: np.ndarray, b: np.ndarray, path: np.ndarray, name_a:
     for i, j in path:
         xs += [i, j, None]
         ys += [a[i], b[j] - offset, None]
-    fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color="#B9B3A4", width=0.8), hoverinfo="skip", name="Pasangan minggu"))
+    fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=_cfg(config, "PLOT_NEUTRAL"), width=0.8), hoverinfo="skip", name="Pasangan minggu"))
     fig.add_trace(go.Scatter(x=np.arange(len(a)), y=a, mode="lines+markers", name=name_a, line=dict(color=cluster_color(0, config), width=2.2),
                              marker=dict(size=5), hovertemplate="W%{x}: %{y:.3f}<extra>" + name_a + "</extra>"))
     fig.add_trace(go.Scatter(x=np.arange(len(b)), y=b - offset, mode="lines+markers", name=f"{name_b} (digeser)",
@@ -342,13 +342,13 @@ def dtw_cost_figure(cost: np.ndarray, path: np.ndarray, window: int | None, name
     fig = go.Figure(go.Heatmap(z=np.sqrt(C), colorscale=[[i / 4, c] for i, c in enumerate(_cfg(config, "PLOT_SEQUENTIAL"))],
                                colorbar=dict(title=dict(text="√biaya"), thickness=10, len=0.6),
                                hovertemplate=f"{name_a} W%{{y}} ↔ {name_b} W%{{x}}<br>√biaya kumulatif %{{z:.3f}}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=[0, m - 1], y=[0, n - 1], mode="lines", line=dict(color="#6B7770", dash="dot", width=1),
+    fig.add_trace(go.Scatter(x=[0, m - 1], y=[0, n - 1], mode="lines", line=dict(color=_cfg(config, "PLOT_MUTED"), dash="dot", width=1),
                              name="Diagonal (Euclidean)", hoverinfo="skip"))
     if window is not None:
         idx = np.arange(n)
         fig.add_trace(go.Scatter(x=np.r_[idx + window, (idx - window)[::-1]].clip(0, m - 1), y=np.r_[idx, idx[::-1]], mode="lines",
                                  line=dict(color=_cfg(config, "PLOT_ACCENT"), width=1, dash="dash"), name=f"Pita ±{window}", hoverinfo="skip"))
-    fig.add_trace(go.Scatter(x=path[:, 1], y=path[:, 0], mode="lines", line=dict(color="#C0392B", width=2.6), name="Jalur DTW optimal",
+    fig.add_trace(go.Scatter(x=path[:, 1], y=path[:, 0], mode="lines", line=dict(color=_cfg(config, "PLOT_ACCENT"), width=3), name="Jalur DTW optimal",
                              hovertemplate=f"{name_a} W%{{y}} ↔ {name_b} W%{{x}}<extra></extra>"))
     fig.update_xaxes(title_text=f"Minggu {name_b}", range=[-0.5, m - 0.5], showgrid=False)
     fig.update_yaxes(title_text=f"Minggu {name_a}", range=[-0.5, n - 0.5], showgrid=False, scaleanchor="x")

@@ -23,6 +23,7 @@ from scripts import model_store as ms
 from scripts import visualization as V
 
 PAGES = ["Ringkasan", "Eksplorasi Data", "Eksplorasi Jarak", "Klasterisasi", "Rekomendasi Metode", "Metodologi"]
+NAV_SVG = ["grid", "table", "trend", "network", "trophy", "info"]
 ICONS = ["space_dashboard", "query_stats", "timeline", "bubble_chart", "workspace_premium", "menu_book"]
 REP_LABEL = ix.REPRESENTATIONS
 ALGO_LABEL = ix.ALGORITHMS
@@ -84,16 +85,100 @@ def apply_css() -> None:
         st.markdown(f"<style>{css.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 
+def _glow(fig) -> None:
+    """Efek neon: garis utama diberi bayangan lebar-transparan. Murni tampilan; data & hover tidak berubah."""
+    try:
+        import plotly.graph_objects as go
+        traces = list(fig.data)
+        if len(traces) > 14:
+            return
+        extra = []
+        for t in traces:
+            if getattr(t, "type", "") != "scatter" or "lines" not in (t.mode or "") or getattr(t, "stackgroup", None):
+                continue
+            color, width, dash = t.line.color, t.line.width or 2, t.line.dash
+            if not isinstance(color, str) or width < 2 or dash not in (None, "solid") or t.x is None or len(t.x) > 400:
+                continue
+            extra.append(go.Scatter(x=t.x, y=t.y, mode="lines", line=dict(color=color, width=width * 4, shape=t.line.shape), opacity=0.16,
+                                    hoverinfo="skip", showlegend=False, xaxis=t.xaxis, yaxis=t.yaxis))
+        if extra:
+            fig.add_traces(extra)
+    except Exception:
+        pass
+
+
 def plot(fig, key: str) -> None:
     fig.update_layout(title=None)
+    _glow(fig)
     st.plotly_chart(fig, width="stretch", theme=None, key=key,
                     config={"displaylogo": False, "displayModeBar": "hover", "modeBarButtonsToRemove": ["select2d", "lasso2d"]})
 
 
-def kpis(cards: list[tuple[str, str, str]]) -> None:
-    for col, (label, value, detail) in zip(st.columns(len(cards)), cards):
-        col.markdown(f'<div class="kpi" style="min-height:118px"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div>'
-                     f'<div class="kpi-detail">{detail}</div></div>', unsafe_allow_html=True)
+_SVG = {
+    "box": '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+    "layers": '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+    "bars": '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+    "network": '<circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><circle cx="12" cy="12" r="2"/><path d="M12 7.2V10M10.4 13.2l-3.9 3.2M13.6 13.2l3.9 3.2"/>',
+    "calendar": '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    "trend": '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    "trend_down": '<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',
+    "cube": '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/>',
+    "filter": '<path d="M3 4h18l-7 9v6l-4 2v-8z"/>',
+    "trophy": '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3a3 3 0 01-3 4M7 5H4a3 3 0 003 4"/>',
+    "wave": '<path d="M2 12c2.5-5 5-5 7.5 0s5 5 7.5 0 3.5-3 5-2"/>',
+    "target": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+    "scale": '<path d="M12 3v18M5 21h14M5 7h14"/><path d="M5 7l-3 7a3 3 0 006 0zM19 7l-3 7a3 3 0 006 0z"/>',
+    "grid": '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    "zero": '<circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/>',
+    "sliders": '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+    "table": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+    "map": '<circle cx="7" cy="8" r="2.5"/><circle cx="16" cy="7" r="2"/><circle cx="12" cy="16" r="3"/><path d="M3 21h18"/>',
+    "pulse": '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+    "info": '<circle cx="12" cy="12" r="9"/><path d="M12 8h0M11 12h1v5h1"/>',
+}
+
+
+def icon(name: str, size: int = 20) -> str:
+    """Ikon garis sederhana (SVG inline, warna mengikuti currentColor)."""
+    return (f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+            f'stroke-linecap="round" stroke-linejoin="round">{_SVG.get(name, _SVG["info"])}</svg>')
+
+
+def idn(value, digits: int = 0) -> str:
+    """Format angka Indonesia: titik ribuan, koma desimal (375.287 · 66,6)."""
+    if value is None or (isinstance(value, float) and not np.isfinite(value)):
+        return "–"
+    return f"{value:,.{digits}f}".replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def kpis(cards: list[tuple]) -> None:
+    """cards = (label, nilai, keterangan[, ikon[, warna aksen]])."""
+    for col, card in zip(st.columns(len(cards)), cards):
+        label, value, detail = card[:3]
+        ic = card[3] if len(card) > 3 else "pulse"
+        accent = card[4] if len(card) > 4 else "var(--cyan)"
+        col.markdown(f'<div class="kpi" style="--accent:{accent}"><div class="ic">{icon(ic)}</div><div><div class="kpi-label">{label}</div>'
+                     f'<div class="kpi-value">{value}</div><div class="kpi-detail">{detail}</div></div></div>', unsafe_allow_html=True)
+
+
+def section(title: str, sub: str = "", ic: str = "pulse") -> None:
+    """Judul section konsisten: ikon cyan + judul + keterangan singkat."""
+    st.markdown(f'<div class="section-title">{icon(ic)}<span>{title}</span></div>' + (f'<div class="section-sub">{sub}</div>' if sub else ""),
+                unsafe_allow_html=True)
+
+
+def best_cards(b: dict, keys: dict) -> None:
+    """Tiga kartu model terbaik (Data asli · Min-Max · Scale) yang mudah dibandingkan."""
+    style = {"original": ("var(--emerald)", "bars"), "minmax": ("var(--gold)", "wave"), "zscore": ("var(--cyan)", "cube")}
+    cols = st.columns(len(keys))
+    for col, (rep, key) in zip(cols, keys.items()):
+        accent, ic = style.get(rep, ("var(--cyan)", "target"))
+        m = b["res"]["runs"][key]["metrics"]
+        col.markdown(
+            f'<div class="best" style="--accent:{accent}"><div class="bg">{icon(ic, 44)}</div>'
+            f'<div class="t">{icon("trophy", 16)} Terbaik · {REP_LABEL[rep]}</div><div class="m">{key_label(key)}</div>'
+            f'<div class="s"><span>Silhouette <b>{idn(m["Silhouette"], 3)}</b></span><span>Balance <b>{idn(m["Balance"], 3)}</b></span>'
+            f'<span>η² nol <b>{idn(m["Eta2_nol"], 3)}</b></span></div></div>', unsafe_allow_html=True)
 
 
 def heading(number: str, title: str, subtitle: str) -> None:
@@ -107,7 +192,10 @@ def insight(title: str, color: str, body: str) -> str:
 
 
 def fmt(v, f="{:.3f}") -> str:
-    return "–" if v is None or (isinstance(v, float) and not np.isfinite(v)) else f.format(v)
+    """Angka metrik dengan format Indonesia (3 desimal bawaan)."""
+    if v is None or (isinstance(v, float) and not np.isfinite(v)):
+        return "–"
+    return f.format(v).replace(",", "_").replace(".", ",").replace("_", ".")
 
 
 def quality(s) -> str:
@@ -117,22 +205,28 @@ def quality(s) -> str:
 
 
 def sidebar(page_objects: dict, current: str) -> None:
-    st.markdown('<div class="brand"><div class="brand-icon">↗</div><div><div class="brand-name">Ruang Sales</div>'
-                '<div class="brand-sub">CERITA DI BALIK ANGKA</div></div></div>', unsafe_allow_html=True)
-    st.markdown('<div class="side-label">NAVIGASI</div>', unsafe_allow_html=True)
-    for i, (name, icon) in enumerate(zip(PAGES, ICONS), start=1):
-        st.button(f"{i:02d}  {name}", key=f"nav_{name}", icon=f":material/{icon}:", width="stretch",
-                  type="primary" if name == current else "secondary",
-                  on_click=lambda target=name: st.switch_page(page_objects[target]))
+    st.markdown(f'<div class="brand"><div class="brand-icon">{icon("layers", 22)}</div><div><div class="brand-name">Ruang Sales</div>'
+                '<div class="brand-sub">Sales Analytics &amp; Time Series Clustering</div></div></div>', unsafe_allow_html=True)
+    for i, (name, ic) in enumerate(zip(PAGES, ICONS), 1):
+        label = f"{i:02d}  {name}"
+        if name == current:
+            st.markdown(f'<div class="nav-active">{icon(NAV_SVG[i - 1], 20)}{label}</div>', unsafe_allow_html=True)
+        else:
+            st.page_link(page_objects[name], label=label, icon=f":material/{ic}:")
     b = bundle()
     if b is None:
         return
     key = active_key(b)
+    rep, algo, k, extra = key.split("|")
     m = b["res"]["runs"][key]["metrics"]
-    st.markdown(f'<div class="side-note"><b>Model aktif</b><br>{key_label(key)}<br>{m["Cluster"]} cluster · Silhouette {fmt(m["Silhouette"])}<br>'
-                f'Balance {fmt(m["Balance"])}{" · <span class=ok>terbaik</span>" if key in b["res"]["best"].values() else ""}</div>', unsafe_allow_html=True)
+    rows = [("Representasi", REP_LABEL[rep].split(" (")[0]), ("Cluster", m["Cluster"]), ("Silhouette", fmt(m["Silhouette"])),
+            ("Balance", fmt(m["Balance"])), ("η² nol", fmt(m.get("Eta2_nol")))]
+    body = "".join(f'<div class="kv"><span>{a}</span><b>{v}</b></div>' for a, v in rows)
+    best = '<span class="pill ok">terbaik</span>' if key in b["res"]["best"].values() else ""
+    st.markdown(f'<div class="side-note"><div class="side-head">{icon("sliders", 18)}<span>Model Aktif</span>{best}</div>'
+                f'<div class="side-model">{ALGO_LABEL[algo].split(" (")[0]}{" · eps p" + extra if algo == "dbscan" else ""}</div>{body}</div>', unsafe_allow_html=True)
     meta = b["res"]["metadata"]
-    st.caption(f"{meta['n_products']} produk · {meta['n_weeks']} minggu · FastDTW radius {meta['distance']['radius']} · model dibangun {meta['created_at_utc'][:10]}")
+    st.markdown(f'<div class="side-foot">{meta["n_products"]} produk · {meta["n_weeks"]} minggu<br>{len(b["res"]["runs"])} model (Colab) · FastDTW r={meta["distance"]["radius"]}</div>', unsafe_allow_html=True)
 
 
 def upload_page() -> None:
@@ -169,45 +263,64 @@ def page_overview() -> None:
     sorted_totals = np.sort(W.sum(axis=1))[::-1]
     top20 = 100 * sorted_totals[: round(.2 * len(sorted_totals))].sum() / sorted_totals.sum()
     half = 100 * (totals[26:].sum() - totals[:26].sum()) / totals[:26].sum()
-    st.markdown('<div class="hero"><div><div class="eyebrow">Sales Transactions · W0–W51</div><h1>Penjualan 52 minggu, dalam satu pandangan.</h1>'
-                '<p>Model dibangun di Colab dengan FastDTW pada tiga representasi data; dashboard ini menampilkan hasilnya tanpa melatih ulang.</p></div>'
-                '<div class="hero-stats">' + "".join(f'<div class="hero-stat"><div class="v">{v}</div><div class="l">{l}</div></div>' for v, l in [
-                    (f"{len(W):,}", "produk"), (f"{W.sum():,.0f}", "unit terjual"), (f"{top20:.1f}%", "volume dari 20% produk teratas"),
-                    (f"{len(res['runs'])}", "model dibangun di Colab")]) + "</div></div>", unsafe_allow_html=True)
-    kpis([("Rata-rata / minggu", f"{totals.mean():,.0f}", f"Puncak W{totals.argmax()}: {totals.max():,.0f}"),
-          ("Paruh 2 vs 1", f"{half:+.1f}%", "W26–W51 dibanding W0–W25"),
-          ("Produk aktif", f"{weekly['Persen_Produk_Aktif'].mean():.1f}%", "rata-rata per minggu"),
-          ("Sel bernilai nol", f"{100 * (W == 0).mean():.1f}%", "produk × minggu")])
-    best_cards = []
-    for i, (rep, key) in enumerate(res["best"].items()):
-        if key:
-            m = res["runs"][key]["metrics"]
-            best_cards.append(insight(f"Terbaik · {REP_LABEL[rep]}", config.PLOT_PALETTE[i], f"<b>{key_label(key)}</b><br>Silhouette {fmt(m['Silhouette'])} · "
-                                      f"Balance {fmt(m['Balance'])} · η² nol {fmt(m['Eta2_nol'])}"))
-    if best_cards:
+    stats_html = "".join(
+        f'<div class="hero-stat"><div class="ic{" gold" if gold else ""}">{icon(ic, 24)}</div><div><div class="v">{v}</div><div class="l">{l}</div></div></div>'
+        for ic, v, l, gold in [("box", idn(len(W)), "Produk", True), ("layers", idn(W.sum()), "Unit terjual", False),
+                               ("bars", f"{idn(top20, 1)}%", "Volume dari 20% produk teratas", True), ("network", idn(len(res["runs"])), "Model dibangun di Colab", False)])
+    st.markdown('<div class="hero"><div><div class="eyebrow">Sales Transactions · W0–W51</div>'
+                '<h1>Penjualan 52 Minggu,<br>dalam <em>Satu Pandangan</em>.</h1>'
+                '<p>Analisis pola penjualan mingguan dengan klasterisasi time series berbasis FastDTW pada tiga representasi data '
+                '(Data asli, Min-Max, Scale) dan enam algoritma.</p></div>'
+                f'<div class="hero-stats">{stats_html}</div></div>', unsafe_allow_html=True)
+    kpis([("Rata-rata / minggu", idn(totals.mean()), f"Puncak W{totals.argmax()}: {idn(totals.max())}", "calendar"),
+          ("Perubahan paruh 2 vs 1", f"{'+' if half > 0 else '−'}{idn(abs(half), 1)}%", "W26–W51 dibanding W0–W25", "trend_down" if half < 0 else "trend",
+           "var(--neg)" if half < 0 else "var(--emerald)"),
+          ("Produk aktif", f"{idn(weekly['Persen_Produk_Aktif'].mean(), 1)}%", "rata-rata per minggu", "cube", "var(--gold)"),
+          ("Sel bernilai nol", f"{idn(100 * (W == 0).mean(), 1)}%", "dari 811 produk × 52 minggu", "filter", "var(--ink-2)")])
+    keys = {rep: k for rep, k in res["best"].items() if k}
+    if keys:
         st.write("")
-        for col, card in zip(st.columns(len(best_cards)), best_cards):
-            col.markdown(card, unsafe_allow_html=True)
+        best_cards(b, keys)
     st.write("")
     left, right = st.columns([1.55, 1], gap="medium")
     with left, st.container(border=True):
-        st.subheader("Perjalanan penjualan mingguan")
-        st.caption("Total semua produk + rata-rata bergerak 4 minggu. W0–W51 = urutan minggu, bukan tanggal kalender.")
+        section("Perjalanan penjualan mingguan", "Total semua produk (cyan) dan rata-rata bergerak 4 minggu (kuning). W0–W51 = urutan minggu, bukan tanggal kalender.", "trend")
         plot(V.create_weekly_sales_figure(weekly, config), "ov_weekly")
-        st.markdown("**Produk aktif per minggu** · grafik terpisah, bukan sumbu ganda")
-        plot(V.create_active_products_figure(weekly, config), "ov_active")
+        st.caption(f"Penjualan turun {idn(abs(half), 1)}% pada paruh kedua; penurunan paling tajam setelah puncak W{totals.argmax()}." if half < 0
+                   else f"Penjualan naik {idn(half, 1)}% pada paruh kedua.")
     with right, st.container(border=True):
-        st.subheader("Konsentrasi volume (Pareto)")
+        section("Konsentrasi volume (Pareto)", "Produk diurutkan dari volume terbesar; garis titik = distribusi merata.", "bars")
         plot(V.create_pareto_figure(stats, config), "ov_pareto")
+        st.caption(f"20% produk teratas menyumbang {idn(top20, 1)}% volume.")
+    a, c = st.columns([1.55, 1], gap="medium")
+    with a, st.container(border=True):
+        section("Hasil klasterisasi", "Ringkasan model terbaik pada tiga representasi data.", "layers")
+        rows = []
+        for rep, key in keys.items():
+            m = res["runs"][key]["metrics"]
+            rows.append({"Representasi": REP_LABEL[rep], "Model terbaik": key_label(key).split(" · ")[0] + " · " + key_label(key).split(" · ")[-1],
+                         "Silhouette": m["Silhouette"], "DBI": m["DBI_MDS"], "CHI": m["CHI_MDS"], "Balance": m["Balance"], "Cluster": m["Cluster"],
+                         "η² nol": m["Eta2_nol"], "Stabilitas": res["metadata"].get("stability", {}).get(rep, {}).get("status", "–")})
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch",
+                     column_config={c2: st.column_config.NumberColumn(format="%.3f") for c2 in ["Silhouette", "DBI", "Balance", "η² nol"]} | {"CHI": st.column_config.NumberColumn(format="%.0f")})
+        st.caption("Silhouette antar-representasi tidak sepenuhnya setara (ruang jarak berbeda); baca bersama Balance dan η² minggu nol.")
+    with c, st.container(border=True):
+        section("Kesamaan pembagian produk (ARI)", "1 = identik, 0 = acak. Konsistensi hasil antar-representasi.", "grid")
+        if len(keys) >= 2:
+            names = [REP_LABEL[r].split(" (")[0] for r in keys]
+            ari = pd.DataFrame([[adjusted_rand_score(res["runs"][keys[x]]["labels"], res["runs"][keys[y]]["labels"]) for y in keys] for x in keys], index=names, columns=names)
+            fig = V.create_similarity_heatmap(ari, "ARI", config)
+            fig.update_layout(height=330)
+            plot(fig, "ov_ari")
+    a, c = st.columns(2, gap="medium")
     key = active_key(b)
     labels = np.asarray(res["runs"][key]["labels"])
-    a, c = st.columns(2, gap="medium")
     with a, st.container(border=True):
-        st.subheader("10 produk dengan volume tertinggi")
-        st.caption(f"Warna = cluster model aktif ({key_label(key)}).")
+        section("10 produk dengan volume tertinggi", f"Warna = cluster model aktif ({key_label(key)}).", "trophy")
         plot(V.create_top_products_figure(stats, 10, config, dict(zip(b["codes"], labels))), "ov_top")
     with c, st.container(border=True):
-        st.subheader("Sebaran minggu tanpa penjualan")
+        section("Produk aktif & minggu tanpa penjualan", "Persentase produk terjual per minggu, lalu sebaran jumlah minggu nol per produk.", "zero")
+        plot(V.create_active_products_figure(weekly, config), "ov_active")
         plot(V.create_zero_weeks_figure(stats, config), "ov_zero")
 
 
@@ -238,11 +351,10 @@ def page_exploration() -> None:
         scale = {"Data asli": "raw", "Min-Max": "minmax", "Scale": "zscore"}[scale_name]
         figs = V.create_exploration_figures(b["stats"], b["W"], prod, config, labels=labels, compare_product=None if cmp == "—" else cmp,
                                             scale=scale, X_scaled=b["X"].get(scale) if scale != "raw" else None)
-        st.subheader(f"Deret mingguan · {prod}")
+        section(f"Deret mingguan · {prod}", "Garis titik = median cluster produk ini sebagai konteks.", "trend")
         plot(figs["product_detail"], "ex_series")
     with right, st.container(border=True):
-        st.subheader("Label di setiap representasi")
-        st.caption("Cluster produk ini pada model terbaik tiap representasi.")
+        section("Label di setiap representasi", "Cluster produk ini pada model terbaik tiap representasi.", "layers")
         i = codes.index(prod)
         rows = []
         for rep, bk in b["res"]["best"].items():
@@ -256,10 +368,10 @@ def page_exploration() -> None:
         st.metric("Minggu nol", f"{int(row['Minggu nol'])} / 52")
     a, c = st.columns(2, gap="medium")
     with a, st.container(border=True):
-        st.subheader("Aktivitas vs volume")
+        section("Aktivitas vs volume", "Sumbu Y skala log; warna = cluster model aktif.", "map")
         plot(figs["activity_vs_volume"], "ex_scatter")
     with c, st.container(border=True):
-        st.subheader("Distribusi total volume")
+        section("Distribusi total volume", "Bin logaritmik: distribusi sangat menceng ke kanan.", "bars")
         plot(figs["sales_distribution"], "ex_hist")
 
 
@@ -294,18 +406,17 @@ def page_distance() -> None:
     eu = float(np.sqrt(((X[ia] - X[ib]) ** 2).sum()))
     d_dtw, path_dtw, cost = ix.dtw_pair(X[ia], X[ib], None)
     d_fast, path_fast, engine = _fastdtw(X[ia], X[ib], radius)
-    kpis([("Euclidean", f"{eu:.3f}", "minggu 1-ke-1"), ("DTW penuh", f"{d_dtw:.3f}", "jalur optimal eksak"),
-          (f"FastDTW r={radius}", f"{d_fast:.3f}", engine), ("Pasangan bergeser", f"{int((path_fast[:, 0] != path_fast[:, 1]).sum())} / {len(path_fast)}", "jalur FastDTW")])
+    kpis([("Euclidean", fmt(eu), "minggu dipasangkan 1-ke-1", "grid", "var(--ink-2)"), ("DTW penuh", fmt(d_dtw), "jalur optimal eksak", "pulse"),
+          (f"FastDTW r = {radius}", fmt(d_fast), engine, "wave", "var(--gold)"), ("Pasangan bergeser", f"{int((path_fast[:, 0] != path_fast[:, 1]).sum())} / {len(path_fast)}", "langkah jalur di luar diagonal", "trend", "var(--emerald)")])
     left, right = st.columns([1.3, 1], gap="medium")
     with left, st.container(border=True):
-        st.subheader("Week alignment · FastDTW")
+        section("Week alignment · FastDTW", "Garis abu-abu = minggu yang disejajarkan; miring = pergeseran waktu.", "wave")
         plot(iv.dtw_alignment_figure(X[ia], X[ib], path_fast, pa, pb, Y_TITLE[rep], config), "dj_align")
     with right, st.container(border=True):
-        st.subheader("Matriks biaya & jalur")
-        st.caption("Warna = biaya kumulatif DTW penuh; merah = jalur FastDTW.")
+        section("Matriks biaya & jalur", "Warna = biaya kumulatif DTW penuh; merah = jalur FastDTW.", "grid")
         plot(iv.dtw_cost_figure(cost, path_fast, None, pa, pb, config), "dj_cost")
     with st.container(border=True):
-        st.subheader(f"10 produk paling mirip dengan {pa}")
+        section(f"10 produk paling mirip dengan {pa}", "FastDTW ke seluruh produk pada representasi terpilih.", "target")
         dist = np.array([_fastdtw(X[ia], X[j], radius)[0] for j in range(len(X))])
         frame = pd.DataFrame({"Produk": codes, "FastDTW": dist, "Euclidean": np.sqrt(((X - X[ia]) ** 2).sum(axis=1)),
                               "Total volume": b["W"].sum(axis=1), "Pola": [list(map(float, r)) for r in X]}).drop(index=ia).nsmallest(10, "FastDTW")
@@ -338,7 +449,8 @@ def page_clustering() -> None:
     heading("04", "Hasil klasterisasi.", "Pilih representasi, algoritma, dan parameter, lalu tekan <b>Tampilkan hasil</b>. Semua model sudah dibangun di Colab dengan FastDTW.")
     cfg = b["res"]["metadata"]["config"]
     best = b["res"]["best"]
-    with st.expander("Kontrol parameter", expanded=True, icon=":material/tune:"):
+    with st.container(border=True):
+        section("Kontrol parameter", "Preset mengisi pilihan dengan model terbaik; ubah sesuai kebutuhan lalu tekan Tampilkan hasil.", "sliders")
         st.selectbox("Preset", ["Kustom", *[r for r, k in best.items() if k]], key="cl_preset", on_change=_apply_preset,
                      format_func=lambda r: r if r == "Kustom" else f"Model terbaik · {REP_LABEL[r]} ({key_label(best[r]).split(' · ', 2)[0]})")
         c1, c2, c3, c4 = st.columns(4)
@@ -379,10 +491,12 @@ def render_result(b: dict, key: str) -> None:
     space = b["res"]["spaces"][rep]
     X, W, codes = b["X"][rep], b["W"], b["codes"]
     m = r.metrics
-    kpis([("Silhouette", fmt(m["Silhouette"]), quality(m["Silhouette"])), ("DBI (MDS)", fmt(m["DBI_MDS"]), "↓ lebih kecil lebih baik"),
-          ("CHI (MDS)", fmt(m["CHI_MDS"], "{:,.0f}"), "↑ lebih besar lebih baik"), ("Balance", fmt(m["Balance"]), "1 = ukuran seimbang"),
-          ("Cluster", str(int(m["Cluster"])), f"coverage {100 * m['Coverage']:.1f}%" + (f" · {int(m['Noise'])} noise" if m["Noise"] else "")),
-          ('<span style="text-transform:none">η²</span> minggu nol', fmt(m["Eta2_nol"]), "tinggi = dipisah frekuensi nol")])
+    kpis([("Silhouette", fmt(m["Silhouette"]), f"{quality(m['Silhouette'])} · pemisahan antar-cluster (↑)", "target", "var(--cyan)"),
+          ("DBI (MDS)", fmt(m["DBI_MDS"]), "Davies–Bouldin: makin kecil makin terpisah (↓)", "scale", "var(--gold)"),
+          ("CHI (MDS)", idn(m["CHI_MDS"]), "Calinski–Harabasz: makin besar makin padat (↑)", "bars", "var(--emerald)"),
+          ("Balance", fmt(m["Balance"]), "1 = ukuran cluster seimbang", "layers", "var(--cyan)"),
+          ("Jumlah cluster", str(int(m["Cluster"])), f"coverage {idn(100 * m['Coverage'], 1)}%" + (f" · {int(m['Noise'])} noise" if m["Noise"] else ""), "network", "var(--gold)"),
+          ("η² minggu nol", fmt(m["Eta2_nol"]), "tinggi = cluster dipisah frekuensi nol", "zero", "var(--neg)")])
     is_best = key in b["res"]["best"].values()
     st.caption(f"{key_label(key)} · FastDTW · pusat: {ix.CENTER_KIND[r.center_kind]}" + (" · ★ model terbaik representasi ini" if is_best else ""))
     for note in r.notes:
@@ -401,11 +515,11 @@ def render_result(b: dict, key: str) -> None:
                                     r.center_kind, shape, spider, config, "Dim"), "fv_map")
         a, c = st.columns([1.6, 1], gap="medium")
         with a, st.container(border=True):
-            st.subheader("Semua centroid")
+            section("Semua centroid", "Bentuk pola tiap cluster dalam satu grafik.", "trend")
             if len(r.cluster_ids):
                 plot(iv.centroid_overlay_figure(r.centers, r.cluster_ids, r.center_kind, Y_TITLE[rep], config), "fv_overlay")
         with c, st.container(border=True):
-            st.subheader("Jarak antar-centroid")
+            section("Jarak antar-centroid", "FastDTW/DTW; makin jauh makin terpisah.", "grid")
             if len(r.cluster_ids) >= 2:
                 plot(iv.center_distance_figure(r.center_dm, r.cluster_ids, config), "fv_cdm")
     with tabs[1]:
@@ -425,44 +539,44 @@ def render_result(b: dict, key: str) -> None:
     with tabs[2]:
         a, c = st.columns(2, gap="medium")
         with a, st.container(border=True):
-            st.subheader("Plot silhouette")
+            section("Plot silhouette", "Gaya fviz_silhouette; batang < 0 = mungkin salah cluster.", "target")
             if np.isfinite(m["Silhouette"]):
                 plot(iv.fviz_silhouette_figure(r.silhouette, r.labels, codes, config), "q_sil")
                 st.caption(f"{100 * np.nanmean(r.silhouette[r.labels != -1] < 0):.1f}% produk bernilai negatif (lebih dekat ke cluster lain).")
         with c, st.container(border=True):
-            st.subheader("Jarak anggota ke pusat")
+            section("Jarak anggota ke pusat", "Ekor panjang = anggota pinggiran.", "scale")
             plot(iv.distance_to_center_figure(r.dist_to_center, r.labels, codes, config), "q_d2c")
         if algo == "agglomerative":
             with st.container(border=True):
-                st.subheader(f"Dendrogram · linkage {extra}")
+                section(f"Dendrogram · linkage {extra}", "Cabang diwarnai per cluster; garis merah = posisi potong.", "network")
                 plot(iv.fviz_dend_figure(r.linkage, r.labels, int(k), config), "q_dend")
         if algo == "dbscan":
             with st.container(border=True):
-                st.subheader("kNN-distance plot")
+                section("kNN-distance plot", "eps ideal di lutut kurva.", "trend")
                 plot(iv.knn_distance_figure(np.array(space["kdist"], dtype=float), r.eps, b["res"]["metadata"]["config"]["DBSCAN_MIN_SAMPLES"], config), "q_knn")
         if r.membership is not None:
             with st.container(border=True):
-                st.subheader("Keanggotaan fuzzy")
+                section("Keanggotaan fuzzy", "", "layers")
                 st.caption(f"FPC {fmt(m.get('FPC'))} · entropi partisi {fmt(m.get('Entropi_partisi'))}. Mendekati 0,5 = produk di perbatasan.")
                 plot(iv.membership_stack_figure(r.membership, r.labels, codes, config), "q_mem")
         if algo != "dbscan":
             with st.container(border=True):
-                st.subheader("Berapa K yang tepat?")
+                section("Berapa K yang tepat?", "Metode siku + rata-rata silhouette dari model K = 2…6 yang sudah dibangun.", "bars")
                 rows = [{"k": kk, **b["res"]["runs"][ms.run_key(rep, algo, kk, extra)]["metrics"]} for kk in b["res"]["metadata"]["config"]["K_GRID"]]
                 rows = [{**row, **{c: (np.nan if v is None else v) for c, v in row.items()}} for row in rows]
                 plot(iv.fviz_nbclust_figure(rows, int(k), config), "q_nb")
     with tabs[3]:
         prof = pd.DataFrame(ix.cluster_profile_rows(r, W, codes))
         prof.insert(0, "Nama", prof["Cluster"].map(V.cluster_name))
-        st.subheader("Ringkasan anggota dan produk representatif")
+        section("Ringkasan anggota dan produk representatif", "", "table")
         st.dataframe(prof[["Nama", "Persona", "Jumlah_Produk", "Proporsi_%", "Total_Penjualan", "Porsi_Volume_%", "Produk_Representatif", "Rata2_Jarak_ke_Pusat"]],
                      hide_index=True, width="stretch", column_config={"Porsi_Volume_%": st.column_config.ProgressColumn("Porsi volume", format="%.1f%%", min_value=0, max_value=100),
                                                                        "Proporsi_%": st.column_config.NumberColumn(format="%.1f"), "Rata2_Jarak_ke_Pusat": st.column_config.NumberColumn(format="%.3f")})
-        st.subheader("Profilisasi deskriptif")
+        section("Profilisasi deskriptif", "Dihitung dari penjualan asli.", "pulse")
         st.dataframe(prof[["Nama", "Rata2_Mingguan", "Median_Minggu_Nol", "CV_Profil", "Perubahan_13mg_%", "Tren"]], hide_index=True, width="stretch",
                      column_config={"Rata2_Mingguan": st.column_config.NumberColumn(format="%.2f"), "CV_Profil": st.column_config.NumberColumn(format="%.3f"),
                                     "Perubahan_13mg_%": st.column_config.NumberColumn("13 mg awal → akhir", format="%+.1f%%")})
-        st.subheader("Interpretasi dan rekomendasi bisnis")
+        section("Interpretasi dan rekomendasi bisnis", "Deskriptif dari data historis; validasi dengan konteks bisnis.", "info")
         for row in prof.to_dict("records"):
             ch = row["Perubahan_13mg_%"]
             st.markdown(f'<div class="insight" style="min-height:0;margin-bottom:10px;border-left-color:{V.cluster_color(row["Cluster"], config)}">'
@@ -494,6 +608,8 @@ def page_recommendation() -> None:
     st.caption(f"Guardrail: minimal {cfg['MIN_CLUSTERS']} cluster · Balance ≥ {cfg['MIN_BALANCE']} · noise ≤ {int(100 * cfg['MAX_NOISE_SHARE'])}% produk.")
     t1, t2, t3 = st.tabs(["Terbaik per representasi", "Peringkat per representasi", "Semua model"])
     with t1:
+        best_cards(b, {rep: k for rep, k in res["best"].items() if k})
+        st.write("")
         rows = []
         for rep, key in res["best"].items():
             if key:
@@ -504,13 +620,10 @@ def page_recommendation() -> None:
                      column_config={c: st.column_config.NumberColumn(format="%.3f") for c in ["Silhouette", "DBI_MDS", "Balance", "Eta2_nol"]} | {"CHI_MDS": st.column_config.NumberColumn(format="%.0f")})
         keys = {rep: k for rep, k in res["best"].items() if k}
         if len(keys) >= 2:
-            names = [REP_LABEL[r] for r in keys]
+            names = [REP_LABEL[r].split(" (")[0] for r in keys]
             ari = pd.DataFrame([[adjusted_rand_score(res["runs"][keys[a]]["labels"], res["runs"][keys[c]]["labels"]) for c in keys] for a in keys], index=names, columns=names)
-            st.subheader("Seberapa sama pembagian produknya? (ARI)")
-            st.caption("1 = identik, 0 = tidak lebih mirip dari acak. ARI rendah = pilihan representasi benar-benar mengubah segmentasi.")
+            section("Kesamaan pembagian produk (ARI)", "1 = identik, 0 = tidak lebih mirip dari acak. ARI rendah = pilihan representasi benar-benar mengubah segmentasi.", "grid")
             plot(V.create_similarity_heatmap(ari, "ARI", config), "rc_ari")
-        st.info("Silhouette antar-representasi tidak sepenuhnya setara (diukur di ruang jarak masing-masing). Pilih representasi sesuai tujuan: "
-                "**Data asli** untuk segmentasi volume, **Min-Max / Scale** untuk segmentasi bentuk pola; perhatikan η² minggu nol.", icon=":material/lightbulb:")
         if st.button("Buka model terbaik representasi default di Klasterisasi", icon=":material/arrow_forward:"):
             st.session_state["shown_key"] = st.session_state["active_key"] = res["best"].get(config.DEFAULT_REPRESENTATION) or next(iter(keys.values()))
             st.switch_page(st.session_state["_pages"]["Klasterisasi"])
@@ -553,7 +666,7 @@ def page_methodology() -> None:
     st.write("")
     a, c = st.columns(2, gap="medium")
     with a, st.container(border=True):
-        st.subheader("Kamus metrik")
+        section("Kamus metrik", "", "info")
         for term, desc in [("Silhouette", "Pemisahan vs kekompakan pada matriks FastDTW; −1…1, lebih tinggi lebih baik (> 0,25 = struktur lemah, > 0,5 = wajar)."),
                            ("DBI & CHI (MDS)", "Dihitung pada embedding MDS 5 dimensi dari matriks FastDTW. DBI ↓, CHI ↑."),
                            ("Balance", "Entropi ukuran cluster ternormalisasi; 1 = seimbang, 0 = satu cluster dominan."),
@@ -562,7 +675,7 @@ def page_methodology() -> None:
             st.markdown(f"**{term}**")
             st.caption(desc)
     with c, st.container(border=True):
-        st.subheader("Konfigurasi pembangunan model")
+        section("Konfigurasi pembangunan model", "", "sliders")
         st.json({"dibangun_utc": meta["created_at_utc"], "durasi_detik": meta["runtime_s"], "jarak": meta["distance"], "konfigurasi": cfg,
                  "model_terbaik": b["res"]["best"], "stabilitas": meta.get("stability"), "versi": meta["versions"]}, expanded=False)
     files = [p for p in sorted(config.RESULTS_DIR.iterdir()) if p.is_file()]

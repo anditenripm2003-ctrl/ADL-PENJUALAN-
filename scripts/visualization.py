@@ -20,16 +20,22 @@ from plotly.subplots import make_subplots
 # Token tampilan (fallback bila `config` tidak diberikan)
 # --------------------------------------------------------------------------------------
 _DEFAULTS = {
-    "PLOT_PRIMARY": "#00806A",
-    "PLOT_ACCENT": "#E06C2B",
-    "PLOT_PALETTE": ["#00806A", "#E06C2B", "#3A6FD9", "#C8457F", "#7B5BD6"],
-    "PLOT_NOISE": "#9AA39E",
-    "PLOT_INK": "#13201B",
-    "PLOT_MUTED": "#6B7770",
-    "PLOT_GRID": "#EEEBE2",
-    "PLOT_SEQUENTIAL": ["#F5F3EC", "#BFE3D6", "#55B196", "#00806A", "#00483A"],
-    "PLOT_SEQUENTIAL_WARM": ["#FBEFE7", "#F6CFB6", "#EDA47C", "#E06C2B", "#A9481A"],
-    "PLOT_FONT": "Plus Jakarta Sans, Arial",
+    # Tema "Dark Analytics": navy + electric cyan + golden yellow (lihat config.py)
+    "PLOT_PRIMARY": "#00D5F2",
+    "PLOT_ACCENT": "#FFD166",
+    "PLOT_PALETTE": ["#0A9CC9", "#B88A12", "#1FA884", "#8E72EA", "#E35D8A"],
+    "PLOT_NOISE": "#718BA3",
+    "PLOT_INK": "#EAF2FA",
+    "PLOT_MUTED": "#A9BDCF",
+    "PLOT_GRID": "rgba(22,73,106,0.55)",
+    "PLOT_SURFACE": "#0D2540",
+    "PLOT_PAPER": "#0D2540",
+    "PLOT_NEUTRAL": "#4A6B86",
+    "PLOT_ALERT": "#FF647C",
+    "PLOT_HOVER_BG": "#0B2945",
+    "PLOT_SEQUENTIAL": ["#0D2540", "#0E4A6E", "#0B7FA8", "#00B3D6", "#7FEAF8"],
+    "PLOT_SEQUENTIAL_WARM": ["#0D2540", "#4A3F2A", "#8A6A26", "#C99A2E", "#FFD166"],
+    "PLOT_FONT": "Inter, Plus Jakarta Sans, Arial",
 }
 WEEK_TICKS = [0, 8, 16, 24, 32, 40, 51]
 
@@ -73,17 +79,17 @@ def style_figure(fig: go.Figure, title: str | None = None, height: int = 360, co
         title=dict(text=title, font=dict(size=14, color=ink)) if title else None,
         height=height,
         margin=dict(l=8, r=24, t=56 if title else 24, b=12),
-        font=dict(family=_cfg(config, "PLOT_FONT"), size=11.5, color=muted),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=_cfg(config, "PLOT_FONT"), size=12.5, color=muted),
+        paper_bgcolor=_cfg(config, "PLOT_PAPER"),
+        plot_bgcolor=_cfg(config, "PLOT_PAPER"),
         colorway=_cfg(config, "PLOT_PALETTE"),
-        legend=dict(orientation="h", y=1.08, x=0, yanchor="bottom", font=dict(size=11.5, color=ink), bgcolor="rgba(0,0,0,0)"),
-        hoverlabel=dict(bgcolor="#13201B", bordercolor="#13201B", font=dict(size=12, color="#F4F7F5", family=_cfg(config, "PLOT_FONT"))),
+        legend=dict(orientation="h", y=1.08, x=0, yanchor="bottom", font=dict(size=12.5, color=ink), bgcolor="rgba(0,0,0,0)"),
+        hoverlabel=dict(bgcolor=_cfg(config, "PLOT_HOVER_BG"), bordercolor=_cfg(config, "PLOT_PRIMARY"), font=dict(size=13, color=_cfg(config, "PLOT_INK"), family=_cfg(config, "PLOT_FONT"))),
         separators=",.",
         bargap=0.25,
     )
-    fig.update_xaxes(showgrid=False, automargin=True, zeroline=False, linecolor=grid, tickcolor=grid)
-    fig.update_yaxes(gridcolor=grid, gridwidth=1, zeroline=False, automargin=True)
+    fig.update_xaxes(showgrid=False, automargin=True, zeroline=False, linecolor=grid, tickcolor=grid, tickfont=dict(size=12, color=muted), title_font=dict(size=12.5, color=muted))
+    fig.update_yaxes(gridcolor=grid, gridwidth=1, zeroline=False, automargin=True, tickfont=dict(size=12, color=muted), title_font=dict(size=12.5, color=muted))
     return fig
 
 
@@ -117,14 +123,14 @@ def create_weekly_sales_figure(weekly_stats: pd.DataFrame, config: object | None
     if rolling and rolling > 1:
         fig.add_trace(go.Scatter(
             x=x, y=_rolling(y, rolling), mode="lines", name=f"Rata-rata bergerak {rolling} minggu",
-            line=dict(width=1.6, color=ink, dash="dash"), hovertemplate="W%{x}<br>MA: %{y:,.0f}<extra></extra>",
+            line=dict(width=2, color=_cfg(config, "PLOT_ACCENT"), dash="dash"), hovertemplate="W%{x}<br>MA: %{y:,.0f}<extra></extra>",
         ))
     max_idx, min_idx = int(y.idxmax()), int(y.idxmin())
     fig.add_trace(go.Scatter(
         x=x.loc[[max_idx, min_idx]], y=y.loc[[max_idx, min_idx]], mode="markers+text",
         text=["Puncak", "Terendah"], textposition=["top center", "bottom right"],
         textfont=dict(color=ink, size=11), showlegend=False,
-        marker=dict(size=11, color=[_cfg(config, "PLOT_ACCENT"), _cfg(config, "PLOT_PALETTE")[3]], line=dict(color="#fff", width=2)),
+        marker=dict(size=11, color=[_cfg(config, "PLOT_ACCENT"), _cfg(config, "PLOT_PALETTE")[3]], line=dict(color=_cfg(config, "PLOT_SURFACE"), width=2)),
         hovertemplate="W%{x}<br>Volume: %{y:,.0f}<extra></extra>",
     ))
     _weekly_axis(fig, "Volume penjualan asli")
@@ -135,7 +141,7 @@ def create_weekly_sales_figure(weekly_stats: pd.DataFrame, config: object | None
 
 def create_active_products_figure(weekly_stats: pd.DataFrame, config: object | None = None) -> go.Figure:
     """Persentase produk aktif per minggu — grafik terpisah, bukan sumbu kedua."""
-    color = _cfg(config, "PLOT_PALETTE")[4]
+    color = getattr(config, "PLOT_EMERALD", "#00C9A7") if config is not None else "#00C9A7"
     fig = go.Figure(go.Scatter(
         x=weekly_stats["Minggu"], y=weekly_stats["Persen_Produk_Aktif"], mode="lines",
         line=dict(width=2, color=color), fill="tozeroy", fillcolor=_hex_to_rgba(color, 0.10),
@@ -153,7 +159,7 @@ def create_pareto_figure(product_stats: pd.DataFrame, config: object | None = No
     cumulative = 100 * np.cumsum(totals) / totals.sum()
     share = 100 * np.arange(1, len(totals) + 1) / len(totals)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=[0, 100], y=[0, 100], mode="lines", line=dict(color="#C9C3B3", dash="dot", width=1),
+    fig.add_trace(go.Scatter(x=[0, 100], y=[0, 100], mode="lines", line=dict(color=_cfg(config, "PLOT_NEUTRAL"), dash="dot", width=1),
                              hoverinfo="skip", showlegend=False))
     fig.add_trace(go.Scatter(
         x=np.r_[0, share], y=np.r_[0, cumulative], mode="lines", line=dict(color=primary, width=2.4),
@@ -166,7 +172,7 @@ def create_pareto_figure(product_stats: pd.DataFrame, config: object | None = No
         x=[20, p80], y=[top20, 80], mode="markers+text", showlegend=False,
         text=[f"20% produk → {top20:.1f}% volume", f"80% volume ← {p80:.1f}% produk"],
         textposition="bottom right", textfont=dict(color=_cfg(config, "PLOT_INK"), size=11),
-        marker=dict(size=10, color=accent, line=dict(color="#fff", width=2)), hoverinfo="skip",
+        marker=dict(size=10, color=accent, line=dict(color=_cfg(config, "PLOT_SURFACE"), width=2)), hoverinfo="skip",
     ))
     fig.update_xaxes(title_text="% produk (urut volume terbesar)", range=[0, 100], ticksuffix="%")
     fig.update_yaxes(title_text="% kumulatif volume", range=[0, 102], ticksuffix="%")
@@ -245,7 +251,7 @@ def create_exploration_figures(
         scatter.add_trace(go.Scattergl(
             x=frame["Minggu aktif (%)"], y=frame["Total volume"].clip(lower=1), mode="markers",
             name=cluster_name(cluster_id), customdata=np.c_[frame["Produk"], frame["Minggu nol"]],
-            marker=dict(size=7, color=cluster_color(cluster_id, config), opacity=0.6, line=dict(color="#fff", width=0.6)),
+            marker=dict(size=7, color=cluster_color(cluster_id, config), opacity=0.6, line=dict(color=_cfg(config, "PLOT_SURFACE"), width=0.6)),
             hovertemplate="<b>%{customdata[0]}</b><br>Aktif: %{x:.1f}%<br>Total: %{y:,.0f}<br>Minggu nol: %{customdata[1]}<extra></extra>",
         ))
     row = product_stats.iloc[position]
@@ -521,7 +527,7 @@ def create_coverage_figure(metrics: pd.DataFrame, config: object | None = None, 
             shares = [100 * float((labels_frame[m].to_numpy(dtype=int) == cluster_id).mean()) for m in methods]
             fig.add_bar(y=methods, x=shares, orientation="h", name=cluster_name(cluster_id), marker=dict(color=cluster_color(cluster_id, config)),
                         text=[f"{s:.0f}%" if s >= 6 else "" for s in shares], textposition="inside", insidetextanchor="middle",
-                        textfont=dict(color="#fff"), hovertemplate="%{y} · " + cluster_name(cluster_id) + ": %{x:.1f}%<extra></extra>")
+                        textfont=dict(color=_cfg(config, "PLOT_SURFACE")), hovertemplate="%{y} · " + cluster_name(cluster_id) + ": %{x:.1f}%<extra></extra>")
         fig.update_layout(barmode="stack")
     fig.update_xaxes(title_text="Porsi produk (%)", range=[0, 100], ticksuffix="%", showgrid=True, gridcolor=_cfg(config, "PLOT_GRID"))
     fig.update_yaxes(autorange="reversed", showgrid=False, title_text=None)
@@ -534,6 +540,7 @@ def create_similarity_heatmap(matrix: pd.DataFrame, metric_name: str = "ARI", co
     fig = go.Figure(go.Heatmap(
         z=matrix.to_numpy(), x=matrix.columns.tolist(), y=matrix.index.tolist(), zmin=0, zmax=1,
         colorscale=_scale(_cfg(config, "PLOT_SEQUENTIAL")), text=matrix.round(2).to_numpy(), texttemplate="%{text:.2f}",
+        textfont=dict(size=15, color=_cfg(config, "PLOT_INK")),
         xgap=3, ygap=3, colorbar=dict(title=dict(text=metric_name), thickness=10, len=0.7),
         hovertemplate="%{y} × %{x}<br>" + metric_name + " = %{z:.3f}<extra></extra>",
     ))
@@ -557,7 +564,7 @@ def create_label_flow_sankey(labels_a: np.ndarray, labels_b: np.ndarray, name_a:
                 link_colors.append(_hex_to_rgba(cluster_color(ca, config), 0.32))
     fig = go.Figure(go.Sankey(
         arrangement="snap",
-        node=dict(label=nodes, color=colors, pad=18, thickness=14, line=dict(color="#fff", width=0.5),
+        node=dict(label=nodes, color=colors, pad=18, thickness=14, line=dict(color=_cfg(config, "PLOT_SURFACE"), width=0.5),
                   hovertemplate="%{label}<br>%{value} produk<extra></extra>"),
         link=dict(source=source, target=target, value=value, color=link_colors,
                   hovertemplate="%{source.label} → %{target.label}<br>%{value} produk<extra></extra>"),
@@ -672,7 +679,7 @@ def create_pca_scatter_figure(pca_data: pd.DataFrame, config: object | None = No
         codes = np.asarray(product_codes)[mask] if product_codes is not None else np.array([""] * mask.sum())
         fig.add_trace(go.Scattergl(
             x=subset["PC1"], y=subset["PC2"], mode="markers", name=cluster_name(cluster_id), customdata=codes,
-            marker=dict(size=7, color=cluster_color(cluster_id, config), opacity=0.6, line=dict(color="#fff", width=0.6)),
+            marker=dict(size=7, color=cluster_color(cluster_id, config), opacity=0.6, line=dict(color=_cfg(config, "PLOT_SURFACE"), width=0.6)),
             hovertemplate="%{customdata}<br>PC1 %{x:.2f} · PC2 %{y:.2f}<extra>" + cluster_name(cluster_id) + "</extra>",
         ))
     fig.update_xaxes(title_text="PC1 · visualisasi saja", showgrid=True, gridcolor=_cfg(config, "PLOT_GRID"))
